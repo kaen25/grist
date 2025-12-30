@@ -5,38 +5,32 @@ Mettre en place Tailwind CSS, shadcn/ui et les alias de chemin.
 
 ---
 
-## Tâche 1.1: Installer Tailwind CSS
+## Tâche 1.1: Installer Tailwind CSS v4
 
-**Commit**: `feat: add Tailwind CSS configuration`
+**Commit**: `feat: add Tailwind CSS v4 configuration`
 
 **Fichiers**:
-- `tailwind.config.js`
-- `postcss.config.js`
 - `src/index.css`
 - `src/main.tsx`
+- `vite.config.ts`
 
 **Actions**:
-- [ ] Exécuter `pnpm add -D tailwindcss postcss autoprefixer`
-- [ ] Exécuter `pnpm exec tailwindcss init -p`
+- [ ] Exécuter `pnpm add -D tailwindcss @tailwindcss/vite`
+- [ ] Mettre à jour `vite.config.ts` pour ajouter le plugin:
+```typescript
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig(async () => ({
+  plugins: [react(), tailwindcss()],
+  // ... rest of config
+}));
+```
 - [ ] Créer `src/index.css` avec:
 ```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-```
-- [ ] Mettre à jour `tailwind.config.js`:
-```js
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-}
+@import "tailwindcss";
+
+@source "../index.html";
+@source "./**/*.{js,ts,jsx,tsx}";
 ```
 - [ ] Importer `./index.css` dans `src/main.tsx`
 - [ ] Supprimer l'ancien `App.css` (optionnel, peut garder pour custom styles)
@@ -100,6 +94,7 @@ export default defineConfig(async () => ({
 **Fichiers**:
 - `components.json`
 - `src/lib/utils.ts`
+- `src/index.css` (mise à jour avec variables CSS via `@theme`)
 - `src/components/ui/button.tsx`
 - `src/components/ui/input.tsx`
 - `src/components/ui/dialog.tsx`
@@ -107,10 +102,11 @@ export default defineConfig(async () => ({
 **Actions**:
 - [ ] Exécuter `pnpm dlx shadcn@latest init`
   - Style: Default
-  - Base color: Slate (ou Zinc)
-  - CSS variables: Yes
+  - Base color: Zinc
+  - Tailwind CSS v4: Yes (détecté automatiquement)
 - [ ] Exécuter `pnpm dlx shadcn@latest add button input dialog`
 - [ ] Vérifier que `src/lib/utils.ts` est créé avec la fonction `cn()`
+- [ ] Vérifier que `src/index.css` contient les variables `@theme` pour les couleurs
 
 ---
 
