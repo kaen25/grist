@@ -25,15 +25,12 @@ export default defineConfig(async () => ({
   // ... rest of config
 }));
 ```
-- [ ] Créer `src/index.css` avec:
+- [ ] Créer `src/index.css` minimal (sera complété par shadcn):
 ```css
 @import "tailwindcss";
-
-@source "../index.html";
-@source "./**/*.{js,ts,jsx,tsx}";
 ```
 - [ ] Importer `./index.css` dans `src/main.tsx`
-- [ ] Supprimer l'ancien `App.css` (optionnel, peut garder pour custom styles)
+- [ ] Supprimer l'ancien `App.css`
 
 ---
 
@@ -94,19 +91,46 @@ export default defineConfig(async () => ({
 **Fichiers**:
 - `components.json`
 - `src/lib/utils.ts`
-- `src/index.css` (mise à jour avec variables CSS via `@theme`)
+- `src/index.css` (mise à jour avec variables CSS shadcn)
 - `src/components/ui/button.tsx`
 - `src/components/ui/input.tsx`
 - `src/components/ui/dialog.tsx`
 
 **Actions**:
 - [ ] Exécuter `pnpm dlx shadcn@latest init`
-  - Style: Default
+  - Style: New York
   - Base color: Zinc
-  - Tailwind CSS v4: Yes (détecté automatiquement)
+  - CSS variables: Yes
 - [ ] Exécuter `pnpm dlx shadcn@latest add button input dialog`
 - [ ] Vérifier que `src/lib/utils.ts` est créé avec la fonction `cn()`
-- [ ] Vérifier que `src/index.css` contient les variables `@theme` pour les couleurs
+- [ ] Vérifier que `src/index.css` contient la structure shadcn pour Tailwind v4:
+```css
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: hsl(...);
+  --foreground: hsl(...);
+  /* ... autres variables shadcn */
+}
+
+.dark {
+  --background: hsl(...);
+  /* ... variables dark mode */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* ... mapping vers --color-* */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+```
 
 ---
 
@@ -131,13 +155,20 @@ pnpm dlx shadcn@latest add checkbox
 pnpm dlx shadcn@latest add select
 pnpm dlx shadcn@latest add textarea
 pnpm dlx shadcn@latest add dropdown-menu
-pnpm dlx shadcn@latest add toast
+pnpm dlx shadcn@latest add sonner
 pnpm dlx shadcn@latest add skeleton
 pnpm dlx shadcn@latest add collapsible
 pnpm dlx shadcn@latest add command
 pnpm dlx shadcn@latest add popover
+pnpm dlx shadcn@latest add alert
 ```
 - [ ] Vérifier que tous les composants sont dans `src/components/ui/`
+
+Note: `sonner` remplace `toast` (déprécié). Pour les notifications:
+```typescript
+import { toast } from "sonner";
+toast.success("Message");
+```
 
 ---
 
