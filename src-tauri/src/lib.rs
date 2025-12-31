@@ -1,7 +1,7 @@
 mod commands;
 mod git;
 
-use commands::{get_git_version, get_repository_info, is_git_repository, open_repository};
+use commands::{get_git_status, get_git_version, get_repository_info, is_git_repository, open_repository};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,7 +13,8 @@ pub fn run() {
             get_git_version,
             get_repository_info,
             is_git_repository,
-            open_repository
+            open_repository,
+            get_git_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
