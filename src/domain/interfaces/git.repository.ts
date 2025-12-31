@@ -25,4 +25,11 @@ export interface IGitRepository {
 
   // Diff
   getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<FileDiff>;
+
+  // Staging
+  stageFile(repoPath: string, filePath: string): Promise<void>;
+  stageAll(repoPath: string): Promise<void>;
+  unstageFile(repoPath: string, filePath: string): Promise<void>;
+  unstageAll(repoPath: string): Promise<void>;
+  discardChanges(repoPath: string, filePath: string, isUntracked: boolean): Promise<void>;
 }

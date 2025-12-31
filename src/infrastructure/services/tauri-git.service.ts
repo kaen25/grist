@@ -48,4 +48,25 @@ export const tauriGitService: IGitRepository = {
   async getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<FileDiff> {
     return invoke('get_file_diff', { repoPath, filePath, staged });
   },
+
+  // Staging operations
+  async stageFile(repoPath: string, filePath: string): Promise<void> {
+    return invoke('stage_file', { repoPath, filePath });
+  },
+
+  async stageAll(repoPath: string): Promise<void> {
+    return invoke('stage_all', { repoPath });
+  },
+
+  async unstageFile(repoPath: string, filePath: string): Promise<void> {
+    return invoke('unstage_file', { repoPath, filePath });
+  },
+
+  async unstageAll(repoPath: string): Promise<void> {
+    return invoke('unstage_all', { repoPath });
+  },
+
+  async discardChanges(repoPath: string, filePath: string, isUntracked: boolean): Promise<void> {
+    return invoke('discard_changes', { repoPath, filePath, isUntracked });
+  },
 };
