@@ -14,7 +14,7 @@ Préparer le projet pour le développement avec git et la structure de documenta
 - [x] Mettre à jour `.gitignore` pour Tauri/Rust
 - [x] Créer `docs/tasks/README.md` (orchestration)
 - [x] Créer tous les fichiers de phase détaillés
-- [ ] Commit initial
+- [x] Commit initial
 
 ---
 

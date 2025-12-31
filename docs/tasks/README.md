@@ -13,8 +13,8 @@ Client GUI Git desktop (style GitExtensions) avec:
 
 | Phase | Fichier | Progression | Description |
 |-------|---------|-------------|-------------|
-| 0 | [phase-00-init.md](./phase-00-init.md) | ⬜ 0/1 | Init git + structure docs |
-| 1 | [phase-01-frontend-config.md](./phase-01-frontend-config.md) | ⬜ 0/5 | Tailwind, shadcn, aliases |
+| 0 | [phase-00-init.md](./phase-00-init.md) | ✅ 1/1 | Init git + structure docs |
+| 1 | [phase-01-frontend-config.md](./phase-01-frontend-config.md) | ✅ 6/6 | Tailwind, shadcn, aliases |
 | 2 | [phase-02-backend-config.md](./phase-02-backend-config.md) | ⬜ 0/6 | Plugins Tauri, module git |
 | 3 | [phase-03-layout.md](./phase-03-layout.md) | ⬜ 0/7 | Stores, types, layout UI |
 | 4 | [phase-04-repository.md](./phase-04-repository.md) | ⬜ 0/3 | Ouvrir/gérer repos |
@@ -31,7 +31,7 @@ Client GUI Git desktop (style GitExtensions) avec:
 | 15 | [phase-15-cherry-revert.md](./phase-15-cherry-revert.md) | ⬜ 0/2 | Cherry-pick, revert |
 | 16 | [phase-16-settings.md](./phase-16-settings.md) | ⬜ 0/4 | Settings, raccourcis |
 
-**Total: 0/78 tâches**
+**Total: 7/78 tâches**
 
 ---
 
