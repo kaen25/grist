@@ -3,7 +3,7 @@ mod git;
 
 use commands::{
     get_git_status, get_git_version, get_repository_info, is_git_repository, open_repository,
-    stage_file, stage_all, unstage_file, unstage_all,
+    stage_file, stage_all, unstage_file, unstage_all, discard_changes,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -21,7 +21,8 @@ pub fn run() {
             stage_file,
             stage_all,
             unstage_file,
-            unstage_all
+            unstage_all,
+            discard_changes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

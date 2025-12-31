@@ -41,3 +41,22 @@ pub async fn unstage_all(repo_path: String) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[tauri::command]
+pub async fn discard_changes(repo_path: String, file_path: String, is_untracked: bool) -> Result<(), String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+
+    if is_untracked {
+        // For untracked files, use clean
+        executor
+            .execute_checked(&["clean", "-f", "--", &file_path])
+            .map_err(|e| e.to_string())?;
+    } else {
+        // For tracked files, checkout from HEAD
+        executor
+            .execute_checked(&["checkout", "HEAD", "--", &file_path])
+            .map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
