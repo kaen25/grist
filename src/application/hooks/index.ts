@@ -1,1 +1,1 @@
-// React hooks (use cases)
+export { useGitService } from './useGitService';
