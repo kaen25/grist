@@ -33,9 +33,19 @@ function getStatusIcon(status: FileStatus) {
 }
 
 export function FileItem({ entry, type, onDiscardRequest }: FileItemProps) {
-  const { selectedFiles, toggleFileSelection } = useUIStore();
+  const { selectedFiles, setSelectedFiles, toggleFileSelection } = useUIStore();
   const { stageFile, unstageFile } = useStagingActions();
   const isSelected = selectedFiles.includes(entry.path);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      // Ctrl+click: toggle selection
+      toggleFileSelection(entry.path);
+    } else {
+      // Normal click: select this file only (opens diff)
+      setSelectedFiles([entry.path]);
+    }
+  };
 
   const status = type === 'staged' ? entry.index_status : entry.worktree_status;
   const Icon = getStatusIcon(status);
@@ -69,7 +79,7 @@ export function FileItem({ entry, type, onDiscardRequest }: FileItemProps) {
             'w-full justify-start gap-2 px-2 h-7',
             isSelected && 'bg-accent'
           )}
-          onClick={() => toggleFileSelection(entry.path)}
+          onClick={handleClick}
         >
           <span className={cn('w-4 text-center text-xs font-mono', color)}>
             {label}

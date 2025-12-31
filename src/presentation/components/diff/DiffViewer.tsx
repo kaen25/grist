@@ -6,6 +6,7 @@ import { DiffHeader } from './DiffHeader';
 import { UnifiedDiff } from './UnifiedDiff';
 import { SideBySideDiff } from './SideBySideDiff';
 import { useUIStore, useRepositoryStore } from '@/application/stores';
+import { useDiffLineSelection } from '@/application/hooks';
 import { tauriGitService } from '@/infrastructure/services';
 import type { FileDiff } from '@/domain/value-objects';
 
@@ -21,6 +22,7 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
   const [diff, setDiff] = useState<FileDiff | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const lineSelection = useDiffLineSelection();
 
   useEffect(() => {
     async function fetchDiff() {
@@ -28,6 +30,7 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
 
       setLoading(true);
       setError(null);
+      lineSelection.clearSelection();
 
       try {
         if (commitHash) {
@@ -46,7 +49,7 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
     }
 
     fetchDiff();
-  }, [path, staged, commitHash, currentRepo]);
+  }, [path, staged, commitHash, currentRepo]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -98,9 +101,9 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
 
       <div className="flex-1 overflow-auto font-mono text-sm">
         {diffMode === 'unified' ? (
-          <UnifiedDiff hunks={diff.hunks} />
+          <UnifiedDiff hunks={diff.hunks} lineSelection={lineSelection} />
         ) : (
-          <SideBySideDiff hunks={diff.hunks} />
+          <SideBySideDiff hunks={diff.hunks} lineSelection={lineSelection} />
         )}
       </div>
     </div>
