@@ -646,4 +646,4 @@ case 'status':
 
 ---
 
-## Progression: 0/6
+## Progression: 6/6
