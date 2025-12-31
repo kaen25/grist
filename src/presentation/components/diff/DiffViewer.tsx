@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { AlignJustify, Columns } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { AlignJustify, Columns, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DiffHeader } from './DiffHeader';
@@ -68,6 +68,55 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
     );
   }
 
+  const handleStageSelectedLines = useCallback(async () => {
+    if (!currentRepo || !diff) return;
+    const selectedKeys = lineSelection.getSelectedLines();
+    if (selectedKeys.length === 0) return;
+
+    try {
+      // Build line indices grouped by hunk
+      const lineIndicesByHunk: Record<number, number[]> = {};
+      for (const key of selectedKeys) {
+        if (!lineIndicesByHunk[key.hunkIndex]) {
+          lineIndicesByHunk[key.hunkIndex] = [];
+        }
+        lineIndicesByHunk[key.hunkIndex].push(key.lineIndex);
+      }
+
+      await tauriGitService.stageLines(currentRepo.path, path, lineIndicesByHunk);
+      lineSelection.clearSelection();
+      // Refresh diff
+      const fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged);
+      setDiff(fileDiff);
+    } catch (err) {
+      setError(String(err));
+    }
+  }, [currentRepo, diff, path, staged, lineSelection]);
+
+  const handleUnstageSelectedLines = useCallback(async () => {
+    if (!currentRepo || !diff) return;
+    const selectedKeys = lineSelection.getSelectedLines();
+    if (selectedKeys.length === 0) return;
+
+    try {
+      const lineIndicesByHunk: Record<number, number[]> = {};
+      for (const key of selectedKeys) {
+        if (!lineIndicesByHunk[key.hunkIndex]) {
+          lineIndicesByHunk[key.hunkIndex] = [];
+        }
+        lineIndicesByHunk[key.hunkIndex].push(key.lineIndex);
+      }
+
+      await tauriGitService.unstageLines(currentRepo.path, path, lineIndicesByHunk);
+      lineSelection.clearSelection();
+      // Refresh diff
+      const fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged);
+      setDiff(fileDiff);
+    } catch (err) {
+      setError(String(err));
+    }
+  }, [currentRepo, diff, path, staged, lineSelection]);
+
   if (!diff || diff.hunks.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -76,26 +125,52 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
     );
   }
 
+  const selectedCount = lineSelection.selectedCount;
+
   return (
     <div className="flex h-full flex-col">
       <DiffHeader diff={diff}>
-        <div className="flex items-center gap-1">
-          <Button
-            variant={diffMode === 'unified' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setDiffMode('unified')}
-            title="Unified view"
-          >
-            <AlignJustify className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={diffMode === 'split' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setDiffMode('split')}
-            title="Side-by-side view"
-          >
-            <Columns className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-2">
+          {selectedCount > 0 && !staged && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleStageSelectedLines}
+              title={`Stage ${selectedCount} selected line(s)`}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Stage {selectedCount} lines
+            </Button>
+          )}
+          {selectedCount > 0 && staged && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleUnstageSelectedLines}
+              title={`Unstage ${selectedCount} selected line(s)`}
+            >
+              <Minus className="h-4 w-4 mr-1" />
+              Unstage {selectedCount} lines
+            </Button>
+          )}
+          <div className="flex items-center gap-1">
+            <Button
+              variant={diffMode === 'unified' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setDiffMode('unified')}
+              title="Unified view"
+            >
+              <AlignJustify className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={diffMode === 'split' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setDiffMode('split')}
+              title="Side-by-side view"
+            >
+              <Columns className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </DiffHeader>
 

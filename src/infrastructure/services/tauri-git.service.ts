@@ -73,4 +73,12 @@ export const tauriGitService: IGitRepository = {
   async discardChanges(repoPath: string, filePath: string, isUntracked: boolean): Promise<void> {
     return invoke('discard_changes', { repoPath, filePath, isUntracked });
   },
+
+  async stageLines(repoPath: string, filePath: string, lineIndicesByHunk: Record<number, number[]>): Promise<void> {
+    return invoke('stage_lines', { repoPath, filePath, lineIndicesByHunk });
+  },
+
+  async unstageLines(repoPath: string, filePath: string, lineIndicesByHunk: Record<number, number[]>): Promise<void> {
+    return invoke('unstage_lines', { repoPath, filePath, lineIndicesByHunk });
+  },
 };

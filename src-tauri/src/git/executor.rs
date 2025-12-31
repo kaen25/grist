@@ -1,4 +1,5 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::io::Write;
 use crate::git::error::GitError;
 use crate::git::path::find_git_executable;
 
@@ -56,5 +57,37 @@ impl GitExecutor {
 
     pub fn repo_path(&self) -> &str {
         &self.repo_path
+    }
+
+    pub fn execute_with_stdin(&self, args: &[&str], stdin_data: &str) -> Result<String, GitError> {
+        let mut child = Command::new(&self.git_path)
+            .current_dir(&self.repo_path)
+            .args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| GitError::IoError {
+                message: e.to_string(),
+            })?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(stdin_data.as_bytes()).map_err(|e| GitError::IoError {
+                message: e.to_string(),
+            })?;
+        }
+
+        let output = child.wait_with_output().map_err(|e| GitError::IoError {
+            message: e.to_string(),
+        })?;
+
+        if !output.status.success() {
+            return Err(GitError::CommandFailed {
+                code: output.status.code().unwrap_or(-1),
+                stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
 }

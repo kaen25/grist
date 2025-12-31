@@ -184,3 +184,144 @@ fn parse_range(range: &str) -> (u32, u32) {
     let lines = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(1);
     (start, lines)
 }
+
+/// Stage specific lines from a file's diff
+/// line_indices_by_hunk: HashMap<hunk_index, Vec<line_index>>
+pub fn stage_lines(
+    executor: &GitExecutor,
+    path: &str,
+    line_indices_by_hunk: std::collections::HashMap<usize, Vec<usize>>,
+) -> Result<(), GitError> {
+    // Get the current unstaged diff
+    let diff = get_file_diff(executor, path, false)?;
+
+    // Generate a partial patch
+    let patch = generate_partial_patch(&diff, &line_indices_by_hunk, false)?;
+
+    if patch.is_empty() {
+        return Ok(());
+    }
+
+    // Apply the patch to the index
+    executor.execute_with_stdin(&["apply", "--cached", "--unidiff-zero"], &patch)?;
+
+    Ok(())
+}
+
+/// Unstage specific lines from a file's staged diff
+pub fn unstage_lines(
+    executor: &GitExecutor,
+    path: &str,
+    line_indices_by_hunk: std::collections::HashMap<usize, Vec<usize>>,
+) -> Result<(), GitError> {
+    // Get the current staged diff
+    let diff = get_file_diff(executor, path, true)?;
+
+    // Generate a partial patch (reversed for unstaging)
+    let patch = generate_partial_patch(&diff, &line_indices_by_hunk, true)?;
+
+    if patch.is_empty() {
+        return Ok(());
+    }
+
+    // Apply the reversed patch to the index
+    executor.execute_with_stdin(&["apply", "--cached", "--unidiff-zero", "--reverse"], &patch)?;
+
+    Ok(())
+}
+
+/// Generate a patch containing only the selected lines
+fn generate_partial_patch(
+    diff: &FileDiff,
+    line_indices_by_hunk: &std::collections::HashMap<usize, Vec<usize>>,
+    _reverse: bool,
+) -> Result<String, GitError> {
+    let mut patch = String::new();
+
+    // Add diff header
+    let old_path = diff.old_path.as_ref().unwrap_or(&diff.new_path);
+    patch.push_str(&format!("diff --git a/{} b/{}\n", old_path, diff.new_path));
+    patch.push_str(&format!("--- a/{}\n", old_path));
+    patch.push_str(&format!("+++ b/{}\n", diff.new_path));
+
+    for (hunk_idx, hunk) in diff.hunks.iter().enumerate() {
+        let selected_indices = match line_indices_by_hunk.get(&hunk_idx) {
+            Some(indices) => indices,
+            None => continue,
+        };
+
+        if selected_indices.is_empty() {
+            continue;
+        }
+
+        // Build partial hunk with selected lines
+        let mut hunk_lines = String::new();
+        let mut old_count = 0u32;
+        let mut new_count = 0u32;
+        let mut old_start = hunk.old_start;
+        let mut new_start = hunk.new_start;
+        let mut first_line_found = false;
+
+        for (line_idx, line) in hunk.lines.iter().enumerate() {
+            let is_selected = selected_indices.contains(&line_idx);
+
+            match line.line_type {
+                DiffLineType::Context => {
+                    // Always include context lines
+                    hunk_lines.push(' ');
+                    hunk_lines.push_str(&line.content);
+                    hunk_lines.push('\n');
+                    old_count += 1;
+                    new_count += 1;
+                    if !first_line_found {
+                        first_line_found = true;
+                    }
+                }
+                DiffLineType::Addition => {
+                    if is_selected {
+                        hunk_lines.push('+');
+                        hunk_lines.push_str(&line.content);
+                        hunk_lines.push('\n');
+                        new_count += 1;
+                        if !first_line_found {
+                            first_line_found = true;
+                        }
+                    }
+                }
+                DiffLineType::Deletion => {
+                    if is_selected {
+                        hunk_lines.push('-');
+                        hunk_lines.push_str(&line.content);
+                        hunk_lines.push('\n');
+                        old_count += 1;
+                        if !first_line_found {
+                            first_line_found = true;
+                        }
+                    }
+                }
+                _ => {}
+            }
+
+            // Track the start position
+            if !first_line_found {
+                if line.old_line_number.is_some() {
+                    old_start = line.old_line_number.unwrap() + 1;
+                }
+                if line.new_line_number.is_some() {
+                    new_start = line.new_line_number.unwrap() + 1;
+                }
+            }
+        }
+
+        if old_count > 0 || new_count > 0 {
+            // Add hunk header
+            patch.push_str(&format!(
+                "@@ -{},{} +{},{} @@\n",
+                old_start, old_count, new_start, new_count
+            ));
+            patch.push_str(&hunk_lines);
+        }
+    }
+
+    Ok(patch)
+}

@@ -33,4 +33,8 @@ export interface IGitRepository {
   unstageFile(repoPath: string, filePath: string): Promise<void>;
   unstageAll(repoPath: string): Promise<void>;
   discardChanges(repoPath: string, filePath: string, isUntracked: boolean): Promise<void>;
+
+  // Partial staging (line-level)
+  stageLines(repoPath: string, filePath: string, lineIndicesByHunk: Record<number, number[]>): Promise<void>;
+  unstageLines(repoPath: string, filePath: string, lineIndicesByHunk: Record<number, number[]>): Promise<void>;
 }
