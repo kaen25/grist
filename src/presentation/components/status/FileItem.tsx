@@ -4,6 +4,7 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { useUIStore } from '@/application/stores';
@@ -61,12 +62,28 @@ export function FileItem({ entry, type, allFilePaths, onDiscardRequest }: FileIt
     ? entry.path.substring(0, entry.path.lastIndexOf('/'))
     : '';
 
+  // Selected files in this category (for multi-select actions)
+  const selectedInCategory = selectedFiles.filter((f) => allFilePaths.includes(f));
+  const hasMultipleSelected = selectedInCategory.length > 1;
+
   const handleStage = async () => {
     await stageFile(entry.path);
   };
 
   const handleUnstage = async () => {
     await unstageFile(entry.path);
+  };
+
+  const handleStageSelected = async () => {
+    for (const path of selectedInCategory) {
+      await stageFile(path);
+    }
+  };
+
+  const handleUnstageSelected = async () => {
+    for (const path of selectedInCategory) {
+      await unstageFile(path);
+    }
   };
 
   const handleDiscard = () => {
@@ -111,11 +128,30 @@ export function FileItem({ entry, type, allFilePaths, onDiscardRequest }: FileIt
             Stage
           </ContextMenuItem>
         )}
+        {hasMultipleSelected && (
+          <>
+            <ContextMenuSeparator />
+            {type === 'staged' ? (
+              <ContextMenuItem onClick={handleUnstageSelected}>
+                <Minus className="mr-2 h-4 w-4" />
+                Unstage {selectedInCategory.length} selected
+              </ContextMenuItem>
+            ) : (
+              <ContextMenuItem onClick={handleStageSelected}>
+                <Plus className="mr-2 h-4 w-4" />
+                Stage {selectedInCategory.length} selected
+              </ContextMenuItem>
+            )}
+          </>
+        )}
         {type !== 'staged' && (
-          <ContextMenuItem onClick={handleDiscard} className="text-destructive">
-            <Undo className="mr-2 h-4 w-4" />
-            Discard changes
-          </ContextMenuItem>
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={handleDiscard} className="text-destructive">
+              <Undo className="mr-2 h-4 w-4" />
+              Discard changes
+            </ContextMenuItem>
+          </>
         )}
       </ContextMenuContent>
     </ContextMenu>
