@@ -1,1 +1,1 @@
-// Domain interfaces (repository contracts)
+export type { IGitRepository } from './git.repository';
