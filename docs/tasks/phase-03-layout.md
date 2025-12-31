@@ -76,7 +76,7 @@ fn get_git_version() -> Result<String, String> {
 - `src/domain/interfaces/index.ts`
 
 **Actions**:
-- [ ] Créer `src/domain/interfaces/git.repository.ts`:
+- [x] Créer `src/domain/interfaces/git.repository.ts`:
 ```typescript
 import type { Repository, Branch, Commit, Remote, Stash } from '@/domain/entities';
 import type { GitStatus, FileDiff } from '@/domain/value-objects';
@@ -106,7 +106,7 @@ export interface IGitRepository {
   getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<FileDiff>;
 }
 ```
-- [ ] Mettre à jour `src/domain/interfaces/index.ts`:
+- [x] Mettre à jour `src/domain/interfaces/index.ts`:
 ```typescript
 export type { IGitRepository } from './git.repository';
 ```
@@ -123,14 +123,14 @@ export type { IGitRepository } from './git.repository';
 - `src-tauri/src/lib.rs` (update)
 
 **Actions**:
-- [ ] Créer le dossier `src-tauri/src/commands/`
-- [ ] Créer `src-tauri/src/commands/mod.rs`:
+- [x] Créer le dossier `src-tauri/src/commands/`
+- [x] Créer `src-tauri/src/commands/mod.rs`:
 ```rust
 pub mod repository;
 
 pub use repository::*;
 ```
-- [ ] Créer `src-tauri/src/commands/repository.rs`:
+- [x] Créer `src-tauri/src/commands/repository.rs`:
 ```rust
 use crate::git::{error::GitError, path, types::Repository};
 use std::path::Path;
@@ -167,7 +167,7 @@ pub fn is_git_repository(path: String) -> bool {
     Path::new(&path).join(".git").exists()
 }
 ```
-- [ ] Mettre à jour `src-tauri/src/lib.rs` pour enregistrer les commandes:
+- [x] Mettre à jour `src-tauri/src/lib.rs` pour enregistrer les commandes:
 ```rust
 mod git;
 mod commands;
@@ -201,7 +201,7 @@ pub fn run() {
 - `src/infrastructure/services/index.ts`
 
 **Actions**:
-- [ ] Créer `src/infrastructure/services/tauri-git.service.ts`:
+- [x] Créer `src/infrastructure/services/tauri-git.service.ts`:
 ```typescript
 import { invoke } from '@tauri-apps/api/core';
 import type { IGitRepository } from '@/domain/interfaces';
@@ -246,7 +246,7 @@ export const tauriGitService: IGitRepository = {
   },
 };
 ```
-- [ ] Mettre à jour `src/infrastructure/services/index.ts`:
+- [x] Mettre à jour `src/infrastructure/services/index.ts`:
 ```typescript
 export { tauriGitService } from './tauri-git.service';
 ```
@@ -262,7 +262,7 @@ export { tauriGitService } from './tauri-git.service';
 - `src/domain/value-objects/*.vo.ts`
 
 **Actions**:
-- [ ] Créer `src/domain/entities/repository.entity.ts`:
+- [x] Créer `src/domain/entities/repository.entity.ts`:
 ```typescript
 export interface Repository {
   path: string;
@@ -271,7 +271,7 @@ export interface Repository {
   remote_url: string | null;
 }
 ```
-- [ ] Créer `src/domain/entities/branch.entity.ts`:
+- [x] Créer `src/domain/entities/branch.entity.ts`:
 ```typescript
 export interface Branch {
   name: string;
@@ -285,7 +285,7 @@ export interface Branch {
   last_commit_date: string | null;
 }
 ```
-- [ ] Créer `src/domain/entities/commit.entity.ts`:
+- [x] Créer `src/domain/entities/commit.entity.ts`:
 ```typescript
 export interface Commit {
   hash: string;
@@ -300,7 +300,7 @@ export interface Commit {
   refs: string[];
 }
 ```
-- [ ] Créer `src/domain/entities/remote.entity.ts`:
+- [x] Créer `src/domain/entities/remote.entity.ts`:
 ```typescript
 export interface Remote {
   name: string;
@@ -308,7 +308,7 @@ export interface Remote {
   push_url: string;
 }
 ```
-- [ ] Créer `src/domain/entities/stash.entity.ts`:
+- [x] Créer `src/domain/entities/stash.entity.ts`:
 ```typescript
 export interface Stash {
   index: number;
@@ -317,7 +317,7 @@ export interface Stash {
   date: string;
 }
 ```
-- [ ] Créer `src/domain/entities/status-entry.entity.ts`:
+- [x] Créer `src/domain/entities/status-entry.entity.ts`:
 ```typescript
 import type { FileStatus } from '@/domain/value-objects';
 
@@ -328,7 +328,7 @@ export interface StatusEntry {
   original_path: string | null;
 }
 ```
-- [ ] Créer `src/domain/entities/index.ts`:
+- [x] Créer `src/domain/entities/index.ts`:
 ```typescript
 export type { Repository } from './repository.entity';
 export type { Branch } from './branch.entity';
@@ -337,7 +337,7 @@ export type { Remote } from './remote.entity';
 export type { Stash } from './stash.entity';
 export type { StatusEntry } from './status-entry.entity';
 ```
-- [ ] Créer `src/domain/value-objects/file-status.vo.ts`:
+- [x] Créer `src/domain/value-objects/file-status.vo.ts`:
 ```typescript
 export type FileStatus =
   | 'Unmodified'
@@ -351,7 +351,7 @@ export type FileStatus =
   | 'Ignored'
   | 'Conflicted';
 ```
-- [ ] Créer `src/domain/value-objects/git-status.vo.ts`:
+- [x] Créer `src/domain/value-objects/git-status.vo.ts`:
 ```typescript
 import type { StatusEntry } from '@/domain/entities';
 
@@ -366,7 +366,7 @@ export interface GitStatus {
   conflicted: StatusEntry[];
 }
 ```
-- [ ] Créer `src/domain/value-objects/diff-hunk.vo.ts`:
+- [x] Créer `src/domain/value-objects/diff-hunk.vo.ts`:
 ```typescript
 export type DiffLineType = 'Context' | 'Addition' | 'Deletion' | 'Header';
 
@@ -386,7 +386,7 @@ export interface DiffHunk {
   lines: DiffLine[];
 }
 ```
-- [ ] Créer `src/domain/value-objects/file-diff.vo.ts`:
+- [x] Créer `src/domain/value-objects/file-diff.vo.ts`:
 ```typescript
 import type { FileStatus } from './file-status.vo';
 import type { DiffHunk } from './diff-hunk.vo';
@@ -401,7 +401,7 @@ export interface FileDiff {
   deletions: number;
 }
 ```
-- [ ] Créer `src/domain/value-objects/index.ts`:
+- [x] Créer `src/domain/value-objects/index.ts`:
 ```typescript
 export type { FileStatus } from './file-status.vo';
 export type { GitStatus } from './git-status.vo';
@@ -421,7 +421,7 @@ export type { FileDiff } from './file-diff.vo';
 - `src/application/stores/index.ts`
 
 **Actions**:
-- [ ] Créer `src/application/stores/repository.store.ts`:
+- [x] Créer `src/application/stores/repository.store.ts`:
 ```typescript
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -482,7 +482,7 @@ export const useRepositoryStore = create<RepositoryState>()(
   )
 );
 ```
-- [ ] Créer `src/application/stores/ui.store.ts`:
+- [x] Créer `src/application/stores/ui.store.ts`:
 ```typescript
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -540,7 +540,7 @@ export const useUIStore = create<UIState>()(
   )
 );
 ```
-- [ ] Créer `src/application/stores/index.ts`:
+- [x] Créer `src/application/stores/index.ts`:
 ```typescript
 export { useRepositoryStore } from './repository.store';
 export { useUIStore, type ViewType, type DiffMode } from './ui.store';
@@ -560,8 +560,8 @@ export { useUIStore, type ViewType, type DiffMode } from './ui.store';
 - `src/presentation/components/layout/index.ts`
 
 **Actions**:
-- [ ] Créer les composants layout (AppLayout, Sidebar, Toolbar, StatusBar)
-- [ ] Exporter depuis index.ts
+- [x] Créer les composants layout (AppLayout, Sidebar, Toolbar, StatusBar)
+- [x] Exporter depuis index.ts
 
 ---
 
@@ -574,7 +574,7 @@ export { useUIStore, type ViewType, type DiffMode } from './ui.store';
 - `src/application/hooks/index.ts`
 
 **Actions**:
-- [ ] Créer `src/application/hooks/useGitService.ts`:
+- [x] Créer `src/application/hooks/useGitService.ts`:
 ```typescript
 import { useCallback } from 'react';
 import { tauriGitService } from '@/infrastructure/services';
@@ -641,7 +641,7 @@ export function useGitService() {
   };
 }
 ```
-- [ ] Mettre à jour `src/application/hooks/index.ts`:
+- [x] Mettre à jour `src/application/hooks/index.ts`:
 ```typescript
 export { useGitService } from './useGitService';
 ```
@@ -656,10 +656,10 @@ export { useGitService } from './useGitService';
 - `src/App.tsx`
 
 **Actions**:
-- [ ] Mettre à jour `src/App.tsx` avec le layout et le routing des vues
-- [ ] Supprimer l'ancien contenu (formulaire greet)
-- [ ] Vérifier que `npm run build` fonctionne
+- [x] Mettre à jour `src/App.tsx` avec le layout et le routing des vues
+- [x] Supprimer l'ancien contenu (formulaire greet)
+- [x] Vérifier que `npm run build` fonctionne
 
 ---
 
-## Progression: 0/8
+## Progression: 8/8 ✅
