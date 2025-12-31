@@ -1,11 +1,19 @@
-import { RefreshCw, ArrowDown, ArrowUp, FolderOpen } from 'lucide-react';
+import { RefreshCw, ArrowDown, ArrowUp, FolderOpen, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useRepositoryStore } from '@/application/stores';
+import { useTheme } from '@/presentation/providers';
 import { cn } from '@/lib/utils';
 
 export function Toolbar() {
   const { currentRepo, status, isRefreshing } = useRepositoryStore();
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
   return (
     <header className="flex h-12 items-center gap-2 border-b px-4">
@@ -46,6 +54,38 @@ export function Toolbar() {
           )}
         </div>
       )}
+
+      <Separator orientation="vertical" className="h-6" />
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            {resolvedTheme === 'dark' ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setTheme('light')}>
+            <Sun className="mr-2 h-4 w-4" />
+            Light
+            {theme === 'light' && <span className="ml-auto">✓</span>}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme('dark')}>
+            <Moon className="mr-2 h-4 w-4" />
+            Dark
+            {theme === 'dark' && <span className="ml-auto">✓</span>}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme('system')}>
+            <Monitor className="mr-2 h-4 w-4" />
+            System
+            {theme === 'system' && <span className="ml-auto">✓</span>}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
   );
 }
