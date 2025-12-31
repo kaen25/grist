@@ -24,6 +24,53 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
   const [error, setError] = useState<string | null>(null);
   const lineSelection = useDiffLineSelection();
 
+  // All hooks must be called before any conditional returns
+  const handleStageSelectedLines = useCallback(async () => {
+    if (!currentRepo || !diff) return;
+    const selectedKeys = lineSelection.getSelectedLines();
+    if (selectedKeys.length === 0) return;
+
+    try {
+      const lineIndicesByHunk: Record<number, number[]> = {};
+      for (const key of selectedKeys) {
+        if (!lineIndicesByHunk[key.hunkIndex]) {
+          lineIndicesByHunk[key.hunkIndex] = [];
+        }
+        lineIndicesByHunk[key.hunkIndex].push(key.lineIndex);
+      }
+
+      await tauriGitService.stageLines(currentRepo.path, path, lineIndicesByHunk);
+      lineSelection.clearSelection();
+      const fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged);
+      setDiff(fileDiff);
+    } catch (err) {
+      setError(String(err));
+    }
+  }, [currentRepo, diff, path, staged, lineSelection]);
+
+  const handleUnstageSelectedLines = useCallback(async () => {
+    if (!currentRepo || !diff) return;
+    const selectedKeys = lineSelection.getSelectedLines();
+    if (selectedKeys.length === 0) return;
+
+    try {
+      const lineIndicesByHunk: Record<number, number[]> = {};
+      for (const key of selectedKeys) {
+        if (!lineIndicesByHunk[key.hunkIndex]) {
+          lineIndicesByHunk[key.hunkIndex] = [];
+        }
+        lineIndicesByHunk[key.hunkIndex].push(key.lineIndex);
+      }
+
+      await tauriGitService.unstageLines(currentRepo.path, path, lineIndicesByHunk);
+      lineSelection.clearSelection();
+      const fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged);
+      setDiff(fileDiff);
+    } catch (err) {
+      setError(String(err));
+    }
+  }, [currentRepo, diff, path, staged, lineSelection]);
+
   useEffect(() => {
     async function fetchDiff() {
       if (!currentRepo) return;
@@ -49,8 +96,9 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
     }
 
     fetchDiff();
-  }, [path, staged, commitHash, currentRepo]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [path, staged, commitHash, currentRepo]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Conditional returns after all hooks
   if (loading) {
     return (
       <div className="p-4 space-y-2">
@@ -67,55 +115,6 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
       </div>
     );
   }
-
-  const handleStageSelectedLines = useCallback(async () => {
-    if (!currentRepo || !diff) return;
-    const selectedKeys = lineSelection.getSelectedLines();
-    if (selectedKeys.length === 0) return;
-
-    try {
-      // Build line indices grouped by hunk
-      const lineIndicesByHunk: Record<number, number[]> = {};
-      for (const key of selectedKeys) {
-        if (!lineIndicesByHunk[key.hunkIndex]) {
-          lineIndicesByHunk[key.hunkIndex] = [];
-        }
-        lineIndicesByHunk[key.hunkIndex].push(key.lineIndex);
-      }
-
-      await tauriGitService.stageLines(currentRepo.path, path, lineIndicesByHunk);
-      lineSelection.clearSelection();
-      // Refresh diff
-      const fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged);
-      setDiff(fileDiff);
-    } catch (err) {
-      setError(String(err));
-    }
-  }, [currentRepo, diff, path, staged, lineSelection]);
-
-  const handleUnstageSelectedLines = useCallback(async () => {
-    if (!currentRepo || !diff) return;
-    const selectedKeys = lineSelection.getSelectedLines();
-    if (selectedKeys.length === 0) return;
-
-    try {
-      const lineIndicesByHunk: Record<number, number[]> = {};
-      for (const key of selectedKeys) {
-        if (!lineIndicesByHunk[key.hunkIndex]) {
-          lineIndicesByHunk[key.hunkIndex] = [];
-        }
-        lineIndicesByHunk[key.hunkIndex].push(key.lineIndex);
-      }
-
-      await tauriGitService.unstageLines(currentRepo.path, path, lineIndicesByHunk);
-      lineSelection.clearSelection();
-      // Refresh diff
-      const fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged);
-      setDiff(fileDiff);
-    } catch (err) {
-      setError(String(err));
-    }
-  }, [currentRepo, diff, path, staged, lineSelection]);
 
   if (!diff || diff.hunks.length === 0) {
     return (
