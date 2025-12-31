@@ -1,1 +1,1 @@
-// Infrastructure services (Tauri invoke implementations)
+export { tauriGitService } from './tauri-git.service';
