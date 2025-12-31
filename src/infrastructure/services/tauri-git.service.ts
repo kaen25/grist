@@ -16,6 +16,10 @@ export const tauriGitService: IGitRepository = {
     return invoke('get_repository_info', { path });
   },
 
+  async openRepository(path: string): Promise<Repository> {
+    return invoke('open_repository', { path });
+  },
+
   async isGitRepository(path: string): Promise<boolean> {
     return invoke('is_git_repository', { path });
   },

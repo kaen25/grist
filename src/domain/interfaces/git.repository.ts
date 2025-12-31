@@ -5,6 +5,7 @@ export interface IGitRepository {
   // Repository
   getVersion(): Promise<string>;
   getRepositoryInfo(path: string): Promise<Repository>;
+  openRepository(path: string): Promise<Repository>;
   isGitRepository(path: string): Promise<boolean>;
 
   // Status

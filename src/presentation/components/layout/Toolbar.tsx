@@ -1,4 +1,4 @@
-import { RefreshCw, ArrowDown, ArrowUp, FolderOpen, Sun, Moon, Monitor } from 'lucide-react';
+import { RefreshCw, ArrowDown, ArrowUp, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useRepositoryStore } from '@/application/stores';
 import { useTheme } from '@/presentation/providers';
+import { RepositorySelector } from '@/presentation/components/repository';
 import { cn } from '@/lib/utils';
 
 export function Toolbar() {
@@ -17,10 +18,7 @@ export function Toolbar() {
 
   return (
     <header className="flex h-12 items-center gap-2 border-b px-4">
-      <Button variant="ghost" size="sm">
-        <FolderOpen className="mr-2 h-4 w-4" />
-        Open
-      </Button>
+      <RepositorySelector />
 
       <Separator orientation="vertical" className="h-6" />
 
