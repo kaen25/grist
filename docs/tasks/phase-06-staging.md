@@ -5,6 +5,96 @@ Permettre de stage/unstage/discard des fichiers.
 
 ---
 
+## Architecture DDD
+
+### Domain Events (src/domain/events/)
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `FileStaged` | `file-staged.event.ts` | `{ path: string, timestamp: Date }` |
+| `FileUnstaged` | `file-unstaged.event.ts` | `{ path: string, timestamp: Date }` |
+| `ChangesDiscarded` | `changes-discarded.event.ts` | `{ path: string, wasUntracked: boolean }` |
+
+### Repository Interface (src/domain/interfaces/)
+
+```typescript
+// src/domain/interfaces/staging.repository.ts
+export interface IStagingRepository {
+  stageFile(repoPath: string, filePath: string): Promise<void>;
+  stageAll(repoPath: string): Promise<void>;
+  unstageFile(repoPath: string, filePath: string): Promise<void>;
+  unstageAll(repoPath: string): Promise<void>;
+  discardChanges(repoPath: string, filePath: string, isUntracked: boolean): Promise<void>;
+}
+```
+
+### Infrastructure (src/infrastructure/repositories/)
+
+```typescript
+// src/infrastructure/repositories/tauri-staging.repository.ts
+import { invoke } from '@tauri-apps/api/core';
+import type { IStagingRepository } from '@/domain/interfaces';
+
+export class TauriStagingRepository implements IStagingRepository {
+  async stageFile(repoPath: string, filePath: string): Promise<void> {
+    return invoke('stage_file', { repoPath, filePath });
+  }
+  async stageAll(repoPath: string): Promise<void> {
+    return invoke('stage_all', { repoPath });
+  }
+  async unstageFile(repoPath: string, filePath: string): Promise<void> {
+    return invoke('unstage_file', { repoPath, filePath });
+  }
+  async unstageAll(repoPath: string): Promise<void> {
+    return invoke('unstage_all', { repoPath });
+  }
+  async discardChanges(repoPath: string, filePath: string, isUntracked: boolean): Promise<void> {
+    return invoke('discard_changes', { repoPath, filePath, isUntracked });
+  }
+}
+```
+
+### Application Hooks (src/application/hooks/)
+
+```typescript
+// src/application/hooks/useStagingActions.ts
+import { TauriStagingRepository } from '@/infrastructure/repositories';
+import { useRepositoryStore } from '@/application/stores';
+
+const stagingRepository = new TauriStagingRepository();
+
+export function useStagingActions() {
+  const { currentRepo } = useRepositoryStore();
+
+  const stageFile = async (path: string) => {
+    if (!currentRepo) return;
+    await stagingRepository.stageFile(currentRepo.path, path);
+  };
+
+  const unstageFile = async (path: string) => {
+    if (!currentRepo) return;
+    await stagingRepository.unstageFile(currentRepo.path, path);
+  };
+
+  const discardChanges = async (path: string, isUntracked: boolean) => {
+    if (!currentRepo) return;
+    await stagingRepository.discardChanges(currentRepo.path, path, isUntracked);
+  };
+
+  return { stageFile, unstageFile, discardChanges };
+}
+```
+
+### Mapping des chemins (ancien → nouveau)
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/services/git/index.ts` (staging) | `src/infrastructure/repositories/tauri-staging.repository.ts` |
+| `GitService.stageFile()` | `useStagingActions().stageFile()` |
+| `src/components/common/` | `src/presentation/components/common/` |
+
+---
+
 ## Tâche 6.1: Commandes stage/unstage (backend)
 
 **Commit**: `feat: add stage and unstage commands`

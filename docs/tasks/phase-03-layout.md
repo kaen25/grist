@@ -5,22 +5,75 @@ Créer la structure UI de base avec stores, types et layout.
 
 ---
 
+## Architecture DDD
+
+Cette phase établit les fondations DDD du projet en définissant les entities et value objects du domaine Git.
+
+### Entities (src/domain/entities/)
+
+| Entity | Fichier | Description |
+|--------|---------|-------------|
+| `Repository` | `repository.entity.ts` | Aggregate root - représente un dépôt Git |
+| `Branch` | `branch.entity.ts` | Branche locale ou remote |
+| `Commit` | `commit.entity.ts` | Objet commit Git |
+| `Remote` | `remote.entity.ts` | Remote repository |
+| `Stash` | `stash.entity.ts` | Entrée de stash |
+| `StatusEntry` | `status-entry.entity.ts` | Fichier avec son statut |
+
+### Value Objects (src/domain/value-objects/)
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `FileStatus` | `file-status.vo.ts` | Enum des états de fichier |
+| `GitStatus` | `git-status.vo.ts` | État complet du working tree |
+| `DiffHunk` | `diff-hunk.vo.ts` | Bloc de diff |
+| `DiffLine` | `diff-line.vo.ts` | Ligne de diff |
+| `FileDiff` | `file-diff.vo.ts` | Diff complet d'un fichier |
+| `ViewType` | `view-type.vo.ts` | Type de vue UI |
+| `DiffMode` | `diff-mode.vo.ts` | Mode d'affichage diff |
+
+### Application Stores (src/application/stores/)
+
+| Store | Fichier | Description |
+|-------|---------|-------------|
+| `repositoryStore` | `repository.store.ts` | État du repository courant |
+| `uiStore` | `ui.store.ts` | État de l'interface utilisateur |
+
+### Presentation (src/presentation/components/)
+
+| Composant | Dossier | Description |
+|-----------|---------|-------------|
+| Layout | `layout/` | AppLayout, Sidebar, Toolbar, StatusBar |
+
+### Mapping des chemins (ancien → nouveau)
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/store/repositoryStore.ts` | `src/application/stores/repository.store.ts` |
+| `src/store/uiStore.ts` | `src/application/stores/ui.store.ts` |
+| `src/store/index.ts` | `src/application/stores/index.ts` |
+| `src/types/git.ts` | `src/domain/entities/*.entity.ts` + `src/domain/value-objects/*.vo.ts` |
+| `src/components/layout/` | `src/presentation/components/layout/` |
+
+---
+
 ## Tâche 3.1: Créer stores Zustand
 
 **Commit**: `feat: add Zustand stores for state management`
 
 **Fichiers**:
-- `src/store/repositoryStore.ts`
-- `src/store/uiStore.ts`
-- `src/store/index.ts`
+- `src/application/stores/repository.store.ts`
+- `src/application/stores/ui.store.ts`
+- `src/application/stores/index.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/store/`
-- [ ] Créer `src/store/repositoryStore.ts`:
+- [ ] Créer le dossier `src/application/stores/`
+- [ ] Créer `src/application/stores/repository.store.ts`:
 ```typescript
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Repository, GitStatus, Commit, Branch } from '@/types/git';
+import type { Repository, Branch, Commit } from '@/domain/entities';
+import type { GitStatus } from '@/domain/value-objects';
 
 interface RepositoryState {
   currentRepo: Repository | null;
@@ -72,7 +125,7 @@ export const useRepositoryStore = create<RepositoryState>()(
   )
 );
 ```
-- [ ] Créer `src/store/uiStore.ts`:
+- [ ] Créer `src/application/stores/ui.store.ts`:
 ```typescript
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -130,25 +183,38 @@ export const useUIStore = create<UIState>()(
   )
 );
 ```
-- [ ] Créer `src/store/index.ts`:
+- [ ] Créer `src/application/stores/index.ts`:
 ```typescript
-export { useRepositoryStore } from './repositoryStore';
-export { useUIStore, type ViewType, type DiffMode } from './uiStore';
+export { useRepositoryStore } from './repository.store';
+export { useUIStore, type ViewType, type DiffMode } from './ui.store';
 ```
 
 ---
 
-## Tâche 3.2: Créer types TypeScript frontend
+## Tâche 3.2: Créer entities et value objects DDD
 
-**Commit**: `feat: add TypeScript types for Git data`
+**Commit**: `feat: add domain entities and value objects`
 
 **Fichiers**:
-- `src/types/git.ts`
-- `src/types/index.ts`
+- `src/domain/entities/repository.entity.ts`
+- `src/domain/entities/branch.entity.ts`
+- `src/domain/entities/commit.entity.ts`
+- `src/domain/entities/remote.entity.ts`
+- `src/domain/entities/stash.entity.ts`
+- `src/domain/entities/status-entry.entity.ts`
+- `src/domain/entities/index.ts`
+- `src/domain/value-objects/file-status.vo.ts`
+- `src/domain/value-objects/git-status.vo.ts`
+- `src/domain/value-objects/diff-hunk.vo.ts`
+- `src/domain/value-objects/file-diff.vo.ts`
+- `src/domain/value-objects/index.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/types/`
-- [ ] Créer `src/types/git.ts`:
+
+### Entities (src/domain/entities/)
+
+- [ ] Créer le dossier `src/domain/entities/`
+- [ ] Créer `src/domain/entities/repository.entity.ts`:
 ```typescript
 export interface Repository {
   path: string;
@@ -156,37 +222,23 @@ export interface Repository {
   branch: string | null;
   remote_url: string | null;
 }
-
-export type FileStatus =
-  | 'Unmodified'
-  | 'Modified'
-  | 'Added'
-  | 'Deleted'
-  | { Renamed: { from: string } }
-  | { Copied: { from: string } }
-  | 'TypeChanged'
-  | 'Untracked'
-  | 'Ignored'
-  | 'Conflicted';
-
-export interface StatusEntry {
-  path: string;
-  index_status: FileStatus;
-  worktree_status: FileStatus;
-  original_path: string | null;
-}
-
-export interface GitStatus {
-  branch: string | null;
-  upstream: string | null;
+```
+- [ ] Créer `src/domain/entities/branch.entity.ts`:
+```typescript
+export interface Branch {
+  name: string;
+  is_current: boolean;
+  is_remote: boolean;
+  remote_name: string | null;
+  tracking: string | null;
   ahead: number;
   behind: number;
-  staged: StatusEntry[];
-  unstaged: StatusEntry[];
-  untracked: StatusEntry[];
-  conflicted: StatusEntry[];
+  last_commit_hash: string | null;
+  last_commit_date: string | null;
 }
-
+```
+- [ ] Créer `src/domain/entities/commit.entity.ts`:
+```typescript
 export interface Commit {
   hash: string;
   short_hash: string;
@@ -199,30 +251,86 @@ export interface Commit {
   parent_hashes: string[];
   refs: string[];
 }
-
-export interface Branch {
-  name: string;
-  is_current: boolean;
-  is_remote: boolean;
-  remote_name: string | null;
-  tracking: string | null;
-  ahead: number;
-  behind: number;
-  last_commit_hash: string | null;
-  last_commit_date: string | null;
-}
-
+```
+- [ ] Créer `src/domain/entities/remote.entity.ts`:
+```typescript
 export interface Remote {
   name: string;
   fetch_url: string;
   push_url: string;
 }
-
+```
+- [ ] Créer `src/domain/entities/stash.entity.ts`:
+```typescript
 export interface Stash {
   index: number;
   message: string;
   branch: string;
   date: string;
+}
+```
+- [ ] Créer `src/domain/entities/status-entry.entity.ts`:
+```typescript
+import type { FileStatus } from '@/domain/value-objects';
+
+export interface StatusEntry {
+  path: string;
+  index_status: FileStatus;
+  worktree_status: FileStatus;
+  original_path: string | null;
+}
+```
+- [ ] Créer `src/domain/entities/index.ts`:
+```typescript
+export type { Repository } from './repository.entity';
+export type { Branch } from './branch.entity';
+export type { Commit } from './commit.entity';
+export type { Remote } from './remote.entity';
+export type { Stash } from './stash.entity';
+export type { StatusEntry } from './status-entry.entity';
+```
+
+### Value Objects (src/domain/value-objects/)
+
+- [ ] Créer le dossier `src/domain/value-objects/`
+- [ ] Créer `src/domain/value-objects/file-status.vo.ts`:
+```typescript
+export type FileStatus =
+  | 'Unmodified'
+  | 'Modified'
+  | 'Added'
+  | 'Deleted'
+  | { Renamed: { from: string } }
+  | { Copied: { from: string } }
+  | 'TypeChanged'
+  | 'Untracked'
+  | 'Ignored'
+  | 'Conflicted';
+```
+- [ ] Créer `src/domain/value-objects/git-status.vo.ts`:
+```typescript
+import type { StatusEntry } from '@/domain/entities';
+
+export interface GitStatus {
+  branch: string | null;
+  upstream: string | null;
+  ahead: number;
+  behind: number;
+  staged: StatusEntry[];
+  unstaged: StatusEntry[];
+  untracked: StatusEntry[];
+  conflicted: StatusEntry[];
+}
+```
+- [ ] Créer `src/domain/value-objects/diff-hunk.vo.ts`:
+```typescript
+export type DiffLineType = 'Context' | 'Addition' | 'Deletion' | 'Header';
+
+export interface DiffLine {
+  line_type: DiffLineType;
+  old_line_number: number | null;
+  new_line_number: number | null;
+  content: string;
 }
 
 export interface DiffHunk {
@@ -233,15 +341,11 @@ export interface DiffHunk {
   header: string;
   lines: DiffLine[];
 }
-
-export interface DiffLine {
-  line_type: DiffLineType;
-  old_line_number: number | null;
-  new_line_number: number | null;
-  content: string;
-}
-
-export type DiffLineType = 'Context' | 'Addition' | 'Deletion' | 'Header';
+```
+- [ ] Créer `src/domain/value-objects/file-diff.vo.ts`:
+```typescript
+import type { FileStatus } from './file-status.vo';
+import type { DiffHunk } from './diff-hunk.vo';
 
 export interface FileDiff {
   old_path: string | null;
@@ -253,9 +357,12 @@ export interface FileDiff {
   deletions: number;
 }
 ```
-- [ ] Créer `src/types/index.ts`:
+- [ ] Créer `src/domain/value-objects/index.ts`:
 ```typescript
-export * from './git';
+export type { FileStatus } from './file-status.vo';
+export type { GitStatus } from './git-status.vo';
+export type { DiffLineType, DiffLine, DiffHunk } from './diff-hunk.vo';
+export type { FileDiff } from './file-diff.vo';
 ```
 
 ---
@@ -265,12 +372,12 @@ export * from './git';
 **Commit**: `feat: add main application layout`
 
 **Fichiers**:
-- `src/components/layout/AppLayout.tsx`
-- `src/components/layout/index.ts`
+- `src/presentation/components/layout/AppLayout.tsx`
+- `src/presentation/components/layout/index.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/components/layout/`
-- [ ] Créer `src/components/layout/AppLayout.tsx`:
+- [ ] Créer le dossier `src/presentation/components/layout/`
+- [ ] Créer `src/presentation/components/layout/AppLayout.tsx`:
 ```typescript
 import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
@@ -294,7 +401,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   );
 }
 ```
-- [ ] Créer `src/components/layout/index.ts`:
+- [ ] Créer `src/presentation/components/layout/index.ts`:
 ```typescript
 export { AppLayout } from './AppLayout';
 export { Sidebar } from './Sidebar';
@@ -309,10 +416,10 @@ export { StatusBar } from './StatusBar';
 **Commit**: `feat: add sidebar navigation`
 
 **Fichiers**:
-- `src/components/layout/Sidebar.tsx`
+- `src/presentation/components/layout/Sidebar.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/layout/Sidebar.tsx`:
+- [ ] Créer `src/presentation/components/layout/Sidebar.tsx`:
 ```typescript
 import { FolderGit2, Clock, GitBranch, Archive, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -322,7 +429,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useUIStore, type ViewType } from '@/store';
+import { useUIStore, type ViewType } from '@/application/stores';
 import { cn } from '@/lib/utils';
 
 const navItems: { id: ViewType; icon: typeof FolderGit2; label: string }[] = [
@@ -369,15 +476,15 @@ export function Sidebar() {
 **Commit**: `feat: add toolbar with common actions`
 
 **Fichiers**:
-- `src/components/layout/Toolbar.tsx`
+- `src/presentation/components/layout/Toolbar.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/layout/Toolbar.tsx`:
+- [ ] Créer `src/presentation/components/layout/Toolbar.tsx`:
 ```typescript
 import { RefreshCw, ArrowDown, ArrowUp, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useRepositoryStore } from '@/store';
+import { useRepositoryStore } from '@/application/stores';
 
 export function Toolbar() {
   const { currentRepo, status, isRefreshing } = useRepositoryStore();
@@ -437,12 +544,12 @@ function cn(...classes: (string | boolean | undefined)[]) {
 **Commit**: `feat: add status bar`
 
 **Fichiers**:
-- `src/components/layout/StatusBar.tsx`
+- `src/presentation/components/layout/StatusBar.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/layout/StatusBar.tsx`:
+- [ ] Créer `src/presentation/components/layout/StatusBar.tsx`:
 ```typescript
-import { useRepositoryStore } from '@/store';
+import { useRepositoryStore } from '@/application/stores';
 
 export function StatusBar() {
   const { currentRepo, status } = useRepositoryStore();
@@ -484,8 +591,8 @@ export function StatusBar() {
 **Actions**:
 - [ ] Mettre à jour `src/App.tsx`:
 ```typescript
-import { AppLayout } from '@/components/layout';
-import { useUIStore } from '@/store';
+import { AppLayout } from '@/presentation/components/layout';
+import { useUIStore } from '@/application/stores';
 
 // Placeholder views - will be implemented later
 function StatusView() {

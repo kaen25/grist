@@ -5,6 +5,146 @@ Permettre de créer des commits avec support amend.
 
 ---
 
+## Architecture DDD
+
+### Aggregate: Commit
+
+**Root Entity:** `Commit`
+
+**Invariants:**
+- Un commit doit avoir un message non vide
+- La ligne de sujet ne devrait pas dépasser 50 caractères (warning)
+- Le corps du message doit être séparé du sujet par une ligne vide
+
+### Value Objects (src/domain/value-objects/)
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `CommitMessage` | `commit-message.vo.ts` | Message de commit (subject + body) |
+| `CommitHash` | `commit-hash.vo.ts` | Hash de commit (full + short) |
+| `Author` | `author.vo.ts` | Auteur (name + email) |
+
+```typescript
+// src/domain/value-objects/commit-message.vo.ts
+export interface CommitMessage {
+  readonly subject: string;
+  readonly body: string;
+}
+
+export function parseCommitMessage(message: string): CommitMessage {
+  const lines = message.split('\n');
+  const subject = lines[0] || '';
+  const body = lines.slice(2).join('\n').trim();
+  return { subject, body };
+}
+
+export function isSubjectTooLong(subject: string): boolean {
+  return subject.length > 50;
+}
+```
+
+### Domain Events (src/domain/events/)
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `CommitCreated` | `commit-created.event.ts` | `{ hash: string, message: string, amend: boolean }` |
+| `CommitAmended` | `commit-amended.event.ts` | `{ hash: string, previousHash: string }` |
+
+### Domain Services (src/domain/services/)
+
+```typescript
+// src/domain/services/commit-message-validator.service.ts
+export const CommitMessageValidator = {
+  validate(message: string): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    if (!message.trim()) {
+      errors.push('Commit message cannot be empty');
+    }
+    return { valid: errors.length === 0, errors };
+  },
+
+  getWarnings(message: string): string[] {
+    const warnings: string[] = [];
+    const subject = message.split('\n')[0] || '';
+    if (subject.length > 50) {
+      warnings.push('Subject line exceeds 50 characters');
+    } else if (subject.length > 40) {
+      warnings.push('Subject line is getting long');
+    }
+    return warnings;
+  },
+};
+```
+
+### Repository Interface (src/domain/interfaces/)
+
+```typescript
+// src/domain/interfaces/commit.repository.ts
+export interface ICommitRepository {
+  create(repoPath: string, message: string, amend: boolean): Promise<string>;
+  getLastMessage(repoPath: string): Promise<string>;
+}
+```
+
+### Infrastructure (src/infrastructure/repositories/)
+
+```typescript
+// src/infrastructure/repositories/tauri-commit.repository.ts
+import { invoke } from '@tauri-apps/api/core';
+import type { ICommitRepository } from '@/domain/interfaces';
+
+export class TauriCommitRepository implements ICommitRepository {
+  async create(repoPath: string, message: string, amend: boolean): Promise<string> {
+    return invoke('create_commit', { repoPath, message, amend });
+  }
+  async getLastMessage(repoPath: string): Promise<string> {
+    return invoke('get_last_commit_message', { repoPath });
+  }
+}
+```
+
+### Application Hooks (src/application/hooks/)
+
+```typescript
+// src/application/hooks/useCommit.ts
+import { useState, useCallback } from 'react';
+import { TauriCommitRepository } from '@/infrastructure/repositories';
+import { useRepositoryStore } from '@/application/stores';
+import { CommitMessageValidator } from '@/domain/services/commit-message-validator.service';
+
+const commitRepository = new TauriCommitRepository();
+
+export function useCommit() {
+  const { currentRepo } = useRepositoryStore();
+  const [isCommitting, setIsCommitting] = useState(false);
+
+  const createCommit = useCallback(async (message: string, amend: boolean) => {
+    if (!currentRepo) return;
+    const { valid, errors } = CommitMessageValidator.validate(message);
+    if (!valid) throw new Error(errors.join(', '));
+
+    setIsCommitting(true);
+    try {
+      return await commitRepository.create(currentRepo.path, message, amend);
+    } finally {
+      setIsCommitting(false);
+    }
+  }, [currentRepo]);
+
+  return { createCommit, isCommitting };
+}
+```
+
+### Mapping des chemins (ancien → nouveau)
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/services/git/index.ts` (commit) | `src/infrastructure/repositories/tauri-commit.repository.ts` |
+| `src/components/commit/` | `src/presentation/components/commit/` |
+| Validation inline | `CommitMessageValidator` |
+
+---
+
 ## Tâche 8.1: Commande create_commit (backend)
 
 **Commit**: `feat: add create_commit command`

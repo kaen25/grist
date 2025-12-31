@@ -188,4 +188,127 @@ toast.success("Message");
 
 ---
 
-## Progression: 0/5
+## Tâche 1.6: Créer structure DDD
+
+**Commit**: `chore: setup DDD folder structure`
+
+**Fichiers**:
+- `src/domain/` (nouveau)
+- `src/application/` (nouveau)
+- `src/infrastructure/` (nouveau)
+- `src/presentation/` (nouveau)
+
+### Conventions de nommage
+
+| Type | Pattern | Exemple |
+|------|---------|---------|
+| Entity | `*.entity.ts` | `commit.entity.ts` |
+| Value Object | `*.vo.ts` | `commit-hash.vo.ts` |
+| Domain Event | `*.event.ts` | `commit-created.event.ts` |
+| Repository Interface | `*.repository.ts` | `commit.repository.ts` |
+| Repository Impl | `tauri-*.repository.ts` | `tauri-commit.repository.ts` |
+| Store | `*.store.ts` | `repository.store.ts` |
+| Hook | `use*.ts` | `useCommit.ts` |
+| Domain Service | `*.service.ts` | `commit-message-validator.service.ts` |
+
+### Règles d'import
+
+```typescript
+// Presentation peut importer de Application et Domain
+import { useCommit } from '@/application/hooks';
+import { Commit } from '@/domain/entities';
+
+// Application peut importer de Domain et Infrastructure (via interfaces)
+import { ICommitRepository } from '@/domain/interfaces';
+import { CommitHash } from '@/domain/value-objects';
+
+// Infrastructure implémente les interfaces de Domain
+import { ICommitRepository } from '@/domain/interfaces';
+
+// Domain n'importe de nulle part (couche pure)
+```
+
+**Actions**:
+- [ ] Créer la structure de dossiers DDD:
+```
+src/
+├── domain/                    # Couche Domaine
+│   ├── entities/              # Entités du domaine
+│   │   └── index.ts
+│   ├── value-objects/         # Value Objects
+│   │   └── index.ts
+│   └── interfaces/            # Interfaces/Ports
+│       └── index.ts
+├── application/               # Couche Application
+│   ├── stores/                # Zustand stores
+│   │   └── index.ts
+│   └── hooks/                 # React hooks (use cases)
+│       └── index.ts
+├── infrastructure/            # Couche Infrastructure
+│   └── services/              # Implémentations (Tauri invoke)
+│       └── index.ts
+├── presentation/              # Couche Présentation
+│   ├── components/            # Composants React par feature
+│   │   ├── layout/
+│   │   ├── status/
+│   │   ├── history/
+│   │   ├── branches/
+│   │   ├── stash/
+│   │   ├── remotes/
+│   │   ├── settings/
+│   │   └── common/
+│   └── pages/                 # Pages/Views principales
+│       └── index.ts
+├── components/                # shadcn/ui (géré par CLI)
+│   └── ui/
+└── lib/                       # Utilitaires (cn, etc.)
+    └── utils.ts
+```
+- [ ] Créer les fichiers index.ts vides pour chaque dossier
+- [ ] Déplacer `src/lib/utils.ts` (créé par shadcn) reste en place
+
+**Architecture DDD - Règles:**
+```
+┌─────────────────────────────────────────────────────────┐
+│                    PRESENTATION                          │
+│  (React Components, Pages)                              │
+│  Dépend de: Application, Domain                         │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                    APPLICATION                           │
+│  (Stores, Hooks/Use Cases)                              │
+│  Dépend de: Domain, Infrastructure (via interfaces)    │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                      DOMAIN                              │
+│  (Entities, Value Objects, Interfaces)                  │
+│  Dépend de: Rien (couche pure)                          │
+└─────────────────────────────────────────────────────────┘
+                           ▲
+                           │
+┌─────────────────────────────────────────────────────────┐
+│                   INFRASTRUCTURE                         │
+│  (GitService via Tauri invoke)                          │
+│  Implémente: Domain interfaces                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Entités du domaine Git:**
+- `Repository` - Aggregate root (chemin, nom, état)
+- `Branch` - Branche locale ou remote
+- `Commit` - Commit avec hash, message, auteur, date
+- `Stash` - Entrée de stash
+- `Remote` - Remote repository
+
+**Value Objects:**
+- `FileStatus` - État d'un fichier (staged, modified, untracked...)
+- `DiffHunk` - Bloc de diff avec lignes
+- `CommitHash` - Hash de commit (short/full)
+
+---
+
+## Progression: 0/6

@@ -5,6 +5,65 @@ Gérer les remotes et les opérations fetch/pull/push.
 
 ---
 
+## Architecture DDD
+
+### Aggregate: Remote
+
+**Root Entity:** `Remote`
+
+**Invariants:**
+- Le nom du remote doit être unique
+- L'URL doit être valide (https, ssh, git://)
+
+### Value Objects
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `RemoteUrl` | `remote-url.vo.ts` | URL validée |
+| `PushOptions` | `push-options.vo.ts` | Options de push |
+| `PullOptions` | `pull-options.vo.ts` | Options de pull |
+| `FetchOptions` | `fetch-options.vo.ts` | Options de fetch |
+
+### Domain Events
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `RemoteAdded` | `remote-added.event.ts` | `{ name: string, url: string }` |
+| `RemoteRemoved` | `remote-removed.event.ts` | `{ name: string }` |
+| `FetchCompleted` | `fetch-completed.event.ts` | `{ remote: string }` |
+| `PullCompleted` | `pull-completed.event.ts` | `{}` |
+| `PushCompleted` | `push-completed.event.ts` | `{}` |
+| `PushFailed` | `push-failed.event.ts` | `{ reason: string }` |
+
+### Repository Interface
+
+```typescript
+// src/domain/interfaces/remote.repository.ts
+import type { Remote } from '@/domain/entities';
+
+export interface IRemoteRepository {
+  getAll(repoPath: string): Promise<Remote[]>;
+  add(repoPath: string, name: string, url: string): Promise<void>;
+  remove(repoPath: string, name: string): Promise<void>;
+  fetch(repoPath: string, remote?: string, prune?: boolean): Promise<void>;
+  pull(repoPath: string, remote?: string, rebase?: boolean): Promise<void>;
+  push(repoPath: string, remote?: string, force?: boolean): Promise<void>;
+}
+```
+
+### Application Hooks
+
+- `useRemotes` - `src/application/hooks/useRemotes.ts`
+- `useSyncActions` - `src/application/hooks/useSyncActions.ts` (fetch, pull, push)
+
+### Mapping des chemins
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/components/remotes/` | `src/presentation/components/remotes/` |
+
+---
+
 ## Tâche 13.1: Commandes remotes (backend)
 
 **Commit**: `feat: add remote commands`

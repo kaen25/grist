@@ -5,6 +5,58 @@ Gérer les stash (save, apply, pop, drop).
 
 ---
 
+## Architecture DDD
+
+### Aggregate: Stash
+
+**Root Entity:** `Stash`
+
+**Invariants:**
+- L'index du stash est unique et séquentiel
+- Un stash avec des fichiers untracked doit avoir été créé avec --include-untracked
+
+### Value Objects
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `StashRef` | `stash-ref.vo.ts` | Référence stash (stash@{N}) |
+| `StashOptions` | `stash-options.vo.ts` | Options de création |
+
+### Domain Events
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `StashCreated` | `stash-created.event.ts` | `{ index: number, message: string }` |
+| `StashApplied` | `stash-applied.event.ts` | `{ index: number, dropped: boolean }` |
+| `StashDropped` | `stash-dropped.event.ts` | `{ index: number }` |
+
+### Repository Interface
+
+```typescript
+// src/domain/interfaces/stash.repository.ts
+import type { Stash } from '@/domain/entities';
+
+export interface IStashRepository {
+  getAll(repoPath: string): Promise<Stash[]>;
+  create(repoPath: string, message?: string, includeUntracked?: boolean): Promise<void>;
+  apply(repoPath: string, index: number): Promise<void>;
+  pop(repoPath: string, index: number): Promise<void>;
+  drop(repoPath: string, index: number): Promise<void>;
+}
+```
+
+### Application Hooks
+
+- `useStash` - `src/application/hooks/useStash.ts`
+
+### Mapping des chemins
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/components/stash/` | `src/presentation/components/stash/` |
+
+---
+
 ## Tâche 14.1: Commandes stash (backend)
 
 **Commit**: `feat: add stash commands`

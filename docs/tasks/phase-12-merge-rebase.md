@@ -5,6 +5,48 @@ Permettre les opérations merge et rebase avec gestion des conflits.
 
 ---
 
+## Architecture DDD
+
+### Value Objects
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `MergeResult` | `merge-result.vo.ts` | Résultat (Success, Conflict, FastForward) |
+| `RebaseResult` | `rebase-result.vo.ts` | Résultat (Success, Conflict, Aborted) |
+| `ConflictInfo` | `conflict-info.vo.ts` | Info sur les conflits |
+
+### Domain Events
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `MergeStarted` | `merge-started.event.ts` | `{ sourceBranch: string, noFf: boolean }` |
+| `MergeCompleted` | `merge-completed.event.ts` | `{ commitHash: string }` |
+| `MergeConflict` | `merge-conflict.event.ts` | `{ conflictedFiles: string[] }` |
+| `RebaseStarted` | `rebase-started.event.ts` | `{ onto: string }` |
+| `RebaseCompleted` | `rebase-completed.event.ts` | `{}` |
+| `OperationAborted` | `operation-aborted.event.ts` | `{ type: 'merge' \| 'rebase' }` |
+
+### Repository Interface
+
+```typescript
+// src/domain/interfaces/merge.repository.ts
+export interface IMergeRepository {
+  merge(repoPath: string, branch: string, noFf: boolean): Promise<MergeResult>;
+  rebase(repoPath: string, onto: string): Promise<RebaseResult>;
+  abortMerge(repoPath: string): Promise<void>;
+  abortRebase(repoPath: string): Promise<void>;
+  continueRebase(repoPath: string): Promise<void>;
+}
+```
+
+### Application Hooks
+
+- `useMerge` - `src/application/hooks/useMerge.ts`
+- `useRebase` - `src/application/hooks/useRebase.ts`
+- `useConflictResolution` - `src/application/hooks/useConflictResolution.ts`
+
+---
+
 ## Tâche 12.1: Commandes merge/rebase (backend)
 
 **Commit**: `feat: add merge and rebase commands`

@@ -5,6 +5,44 @@ Permettre cherry-pick et revert de commits.
 
 ---
 
+## Architecture DDD
+
+### Value Objects
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `CherryPickResult` | `cherry-pick-result.vo.ts` | Résultat (Success, Conflict) |
+| `RevertResult` | `revert-result.vo.ts` | Résultat (Success, Conflict) |
+
+### Domain Events
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `CommitCherryPicked` | `commit-cherry-picked.event.ts` | `{ originalHash: string, newHash: string }` |
+| `CommitReverted` | `commit-reverted.event.ts` | `{ revertedHash: string, revertCommitHash: string }` |
+| `CherryPickConflict` | `cherry-pick-conflict.event.ts` | `{ conflictedFiles: string[] }` |
+| `RevertConflict` | `revert-conflict.event.ts` | `{ conflictedFiles: string[] }` |
+
+### Repository Interface (extension de ICommitRepository)
+
+```typescript
+// Extension de src/domain/interfaces/commit.repository.ts
+export interface ICommitRepository {
+  // ... méthodes existantes
+  cherryPick(repoPath: string, hash: string): Promise<CherryPickResult>;
+  revert(repoPath: string, hash: string): Promise<RevertResult>;
+  abortCherryPick(repoPath: string): Promise<void>;
+  abortRevert(repoPath: string): Promise<void>;
+}
+```
+
+### Application Hooks
+
+- `useCherryPick` - `src/application/hooks/useCherryPick.ts`
+- `useRevert` - `src/application/hooks/useRevert.ts`
+
+---
+
 ## Tâche 15.1: Commandes cherry-pick/revert (backend)
 
 **Commit**: `feat: add cherry-pick and revert commands`

@@ -5,6 +5,47 @@ Visualiser les branches avec un graph SVG interactif.
 
 ---
 
+## Architecture DDD
+
+### Value Objects (src/domain/value-objects/)
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `GraphNode` | `graph-node.vo.ts` | Noeud du graph (commit + position) |
+| `GraphLayout` | `graph-layout.vo.ts` | Layout complet (nodes + maxColumn) |
+| `GraphConnection` | `graph-connection.vo.ts` | Connexion entre noeuds |
+
+### Domain Services (src/domain/services/)
+
+```typescript
+// src/domain/services/graph-layout-calculator.service.ts
+import type { Commit } from '@/domain/entities';
+import type { GraphNode, GraphLayout } from '@/domain/value-objects';
+
+export const GraphLayoutCalculator = {
+  calculateLayout(commits: Commit[]): GraphLayout {
+    // ... algorithme d'assignation des colonnes
+  },
+};
+
+// src/domain/services/graph-color-provider.service.ts
+export const GraphColorProvider = {
+  getColumnColor(column: number): string {
+    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+    return colors[column % colors.length];
+  },
+};
+```
+
+### Mapping des chemins
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/components/history/graphLayout.ts` | `src/domain/services/graph-layout-calculator.service.ts` |
+| `src/components/history/CommitGraph.tsx` | `src/presentation/components/history/CommitGraph.tsx` |
+
+---
+
 ## Tâche 10.1: Algorithme de layout graph
 
 **Commit**: `feat: add graph layout algorithm`

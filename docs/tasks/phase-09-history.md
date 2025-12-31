@@ -5,6 +5,51 @@ Afficher l'historique des commits avec liste virtualisée.
 
 ---
 
+## Architecture DDD
+
+### Value Objects
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `CommitRef` | `commit-ref.vo.ts` | Référence (Branch, Tag, HEAD) |
+| `HistoryFilter` | `history-filter.vo.ts` | Filtre de recherche |
+
+### Domain Events
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `HistoryLoaded` | `history-loaded.event.ts` | `{ commits: Commit[], hasMore: boolean }` |
+| `CommitSelected` | `commit-selected.event.ts` | `{ hash: string }` |
+
+### Repository Interface
+
+```typescript
+// src/domain/interfaces/log.repository.ts
+import type { Commit } from '@/domain/entities';
+
+export interface ILogRepository {
+  getLog(repoPath: string, count: number, skip: number): Promise<Commit[]>;
+  getCommit(repoPath: string, hash: string): Promise<Commit>;
+}
+```
+
+### Infrastructure
+
+- `TauriLogRepository` - `src/infrastructure/repositories/tauri-log.repository.ts`
+
+### Application Hooks
+
+- `useHistory` - `src/application/hooks/useHistory.ts`
+- `useInfiniteCommits` - `src/application/hooks/useInfiniteCommits.ts` (pagination)
+
+### Mapping des chemins
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/components/history/` | `src/presentation/components/history/` |
+
+---
+
 ## Tâche 9.1: Parser git log (backend)
 
 **Commit**: `feat: add git log parser`

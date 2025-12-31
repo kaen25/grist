@@ -5,6 +5,48 @@ Finaliser l'application avec settings et raccourcis.
 
 ---
 
+## Architecture DDD
+
+### Value Objects
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `Theme` | `theme.vo.ts` | Enum (Light, Dark, System) |
+| `AppSettings` | `app-settings.vo.ts` | Configuration complète |
+
+```typescript
+// src/domain/value-objects/theme.vo.ts
+export type Theme = 'light' | 'dark' | 'system';
+
+// src/domain/value-objects/app-settings.vo.ts
+export interface AppSettings {
+  theme: Theme;
+  fontSize: number;
+  diffContextLines: number;
+  pollInterval: number;
+}
+```
+
+### Application Stores
+
+- `settingsStore` - `src/application/stores/settings.store.ts`
+
+### Application Hooks
+
+- `useKeyboardShortcuts` - `src/application/hooks/useKeyboardShortcuts.ts`
+
+### Mapping des chemins
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/store/settingsStore.ts` | `src/application/stores/settings.store.ts` |
+| `src/components/settings/` | `src/presentation/components/settings/` |
+| `src/components/ThemeProvider.tsx` | `src/presentation/providers/ThemeProvider.tsx` |
+| `src/components/common/CommandPalette.tsx` | `src/presentation/components/common/CommandPalette.tsx` |
+| `src/hooks/useKeyboardShortcuts.ts` | `src/application/hooks/useKeyboardShortcuts.ts` |
+
+---
+
 ## Tâche 16.1: Créer SettingsView
 
 **Commit**: `feat: add SettingsView component`

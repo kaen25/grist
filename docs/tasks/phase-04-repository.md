@@ -5,6 +5,128 @@ Permettre d'ouvrir et gérer des repositories git.
 
 ---
 
+## Architecture DDD
+
+### Aggregate: Repository
+
+**Root Entity:** `Repository`
+
+**Invariants:**
+- Un repository doit avoir un chemin valide vers un dossier existant
+- Un repository doit contenir un dossier `.git` valide
+- Le nom du repository est dérivé du chemin si non spécifié
+
+### Value Objects (src/domain/value-objects/)
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `RepositoryPath` | `repository-path.vo.ts` | Chemin validé vers un repo |
+
+```typescript
+// src/domain/value-objects/repository-path.vo.ts
+export interface RepositoryPath {
+  readonly value: string;
+  readonly name: string;
+}
+
+export function createRepositoryPath(path: string): RepositoryPath {
+  const name = path.split('/').pop() ?? path;
+  return { value: path, name };
+}
+```
+
+### Domain Events (src/domain/events/)
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `RepositoryOpened` | `repository-opened.event.ts` | `{ path: string, timestamp: Date }` |
+| `RepositoryAdded` | `repository-added.event.ts` | `{ repository: Repository }` |
+
+```typescript
+// src/domain/events/repository-opened.event.ts
+export interface RepositoryOpenedEvent {
+  type: 'RepositoryOpened';
+  payload: {
+    path: string;
+    timestamp: Date;
+  };
+}
+```
+
+### Repository Interface (src/domain/interfaces/)
+
+```typescript
+// src/domain/interfaces/repository.repository.ts
+import type { Repository } from '@/domain/entities';
+
+export interface IRepositoryRepository {
+  open(path: string): Promise<Repository>;
+  validate(path: string): Promise<boolean>;
+}
+```
+
+### Infrastructure (src/infrastructure/repositories/)
+
+```typescript
+// src/infrastructure/repositories/tauri-repository.repository.ts
+import { invoke } from '@tauri-apps/api/core';
+import type { IRepositoryRepository } from '@/domain/interfaces';
+import type { Repository } from '@/domain/entities';
+
+export class TauriRepositoryRepository implements IRepositoryRepository {
+  async open(path: string): Promise<Repository> {
+    return invoke('open_repository', { path });
+  }
+
+  async validate(path: string): Promise<boolean> {
+    try {
+      await this.open(path);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+```
+
+### Application Hooks (src/application/hooks/)
+
+```typescript
+// src/application/hooks/useRepository.ts
+import { TauriRepositoryRepository } from '@/infrastructure/repositories';
+import { useRepositoryStore } from '@/application/stores';
+
+const repository = new TauriRepositoryRepository();
+
+export function useRepository() {
+  const { setCurrentRepo, addRecentRepo, setLoading } = useRepositoryStore();
+
+  const openRepository = async (path: string) => {
+    setLoading(true);
+    try {
+      const repo = await repository.open(path);
+      setCurrentRepo(repo);
+      addRecentRepo(repo);
+      return repo;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { openRepository };
+}
+```
+
+### Mapping des chemins (ancien → nouveau)
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/components/repository/` | `src/presentation/components/repository/` |
+| `invoke('open_repository')` direct | `TauriRepositoryRepository.open()` |
+| `useRepositoryStore` actions | `useRepository` hook |
+
+---
+
 ## Tâche 4.1: Commande open_repository (backend)
 
 **Commit**: `feat: add open_repository command`
@@ -87,17 +209,22 @@ pub fn run() {
 **Commit**: `feat: add repository selector component`
 
 **Fichiers**:
-- `src/components/repository/RepositorySelector.tsx`
-- `src/components/repository/index.ts`
-- `src/components/layout/Toolbar.tsx` (mise à jour)
+- `src/presentation/components/repository/RepositorySelector.tsx`
+- `src/presentation/components/repository/index.ts`
+- `src/presentation/components/layout/Toolbar.tsx` (mise à jour)
+- `src/domain/interfaces/repository.repository.ts`
+- `src/infrastructure/repositories/tauri-repository.repository.ts`
+- `src/application/hooks/useRepository.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/components/repository/`
-- [ ] Créer `src/components/repository/RepositorySelector.tsx`:
+- [ ] Créer `src/domain/interfaces/repository.repository.ts` (voir Architecture DDD)
+- [ ] Créer `src/infrastructure/repositories/tauri-repository.repository.ts` (voir Architecture DDD)
+- [ ] Créer `src/application/hooks/useRepository.ts` (voir Architecture DDD)
+- [ ] Créer le dossier `src/presentation/components/repository/`
+- [ ] Créer `src/presentation/components/repository/RepositorySelector.tsx`:
 ```typescript
 import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { invoke } from '@tauri-apps/api/core';
 import { FolderOpen, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -108,13 +235,15 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useRepositoryStore } from '@/store';
-import type { Repository } from '@/types/git';
+import { useRepositoryStore } from '@/application/stores';
+import { useRepository } from '@/application/hooks';
+import type { Repository } from '@/domain/entities';
 
 export function RepositorySelector() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { recentRepos, setCurrentRepo, addRecentRepo } = useRepositoryStore();
+  const { recentRepos } = useRepositoryStore();
+  const { openRepository } = useRepository();
 
   const handleOpenFolder = async () => {
     try {
@@ -126,11 +255,7 @@ export function RepositorySelector() {
 
       if (selected) {
         setIsLoading(true);
-        const repo = await invoke<Repository>('open_repository', {
-          path: selected,
-        });
-        setCurrentRepo(repo);
-        addRecentRepo(repo);
+        await openRepository(selected);
         setIsOpen(false);
       }
     } catch (error) {
@@ -144,9 +269,7 @@ export function RepositorySelector() {
   const handleOpenRecent = async (path: string) => {
     try {
       setIsLoading(true);
-      const repo = await invoke<Repository>('open_repository', { path });
-      setCurrentRepo(repo);
-      addRecentRepo(repo);
+      await openRepository(path);
       setIsOpen(false);
     } catch (error) {
       console.error('Failed to open repository:', error);
@@ -212,14 +335,14 @@ export function RepositorySelector() {
   );
 }
 ```
-- [ ] Créer `src/components/repository/index.ts`:
+- [ ] Créer `src/presentation/components/repository/index.ts`:
 ```typescript
 export { RepositorySelector } from './RepositorySelector';
 ```
-- [ ] Mettre à jour `Toolbar.tsx` pour utiliser `RepositorySelector`:
+- [ ] Mettre à jour `src/presentation/components/layout/Toolbar.tsx` pour utiliser `RepositorySelector`:
 ```typescript
 // Remplacer le bouton Open par:
-import { RepositorySelector } from '@/components/repository';
+import { RepositorySelector } from '@/presentation/components/repository';
 
 // Dans le JSX, remplacer le Button Open par:
 <RepositorySelector />
@@ -232,10 +355,10 @@ import { RepositorySelector } from '@/components/repository';
 **Commit**: `feat: persist recent repositories`
 
 **Fichiers**:
-- `src/store/repositoryStore.ts` (déjà fait dans 3.1, vérifier)
+- `src/application/stores/repository.store.ts` (déjà fait dans 3.1, vérifier)
 
 **Actions**:
-- [ ] Vérifier que `zustand/persist` est configuré dans `repositoryStore.ts`
+- [ ] Vérifier que `zustand/persist` est configuré dans `repository.store.ts`
 - [ ] Vérifier que `recentRepos` est bien persisté
 - [ ] Tester en ouvrant un repo, fermant l'app, et réouvrant
 

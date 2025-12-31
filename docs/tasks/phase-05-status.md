@@ -5,6 +5,142 @@ Afficher l'état des fichiers (staged, unstaged, untracked).
 
 ---
 
+## Architecture DDD
+
+### Aggregate: WorkingTree
+
+**Root:** `GitStatus` (représente l'état complet du working tree)
+
+**Entités enfants:** `StatusEntry` (fichiers)
+
+**Invariants:**
+- Les fichiers staged ne peuvent pas être simultanément untracked
+- Les fichiers conflicted sont prioritaires sur les autres statuts
+- Un fichier ne peut avoir qu'un seul statut par zone (index/worktree)
+
+### Entities (utilisées)
+
+| Entity | Fichier | Description |
+|--------|---------|-------------|
+| `StatusEntry` | `status-entry.entity.ts` | Fichier avec ses statuts index/worktree |
+
+### Value Objects (utilisés)
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `GitStatus` | `git-status.vo.ts` | État complet du working tree |
+| `FileStatus` | `file-status.vo.ts` | Enum des états de fichier |
+| `BranchRef` | `branch-ref.vo.ts` | Référence de branche (nouveau) |
+
+```typescript
+// src/domain/value-objects/branch-ref.vo.ts
+export interface BranchRef {
+  readonly name: string | null;  // null si detached HEAD
+  readonly upstream: string | null;
+  readonly ahead: number;
+  readonly behind: number;
+}
+```
+
+### Domain Events (src/domain/events/)
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `StatusRefreshed` | `status-refreshed.event.ts` | `{ status: GitStatus, timestamp: Date }` |
+| `FileStatusChanged` | `file-status-changed.event.ts` | `{ path: string, oldStatus: FileStatus, newStatus: FileStatus }` |
+
+### Domain Services (src/domain/services/)
+
+```typescript
+// src/domain/services/status-classifier.service.ts
+import type { FileStatus } from '@/domain/value-objects';
+
+export const StatusClassifier = {
+  getIcon(status: FileStatus): string {
+    if (status === 'Added' || status === 'Untracked') return 'FilePlus';
+    if (status === 'Deleted') return 'FileMinus';
+    if (status === 'Modified') return 'FileText';
+    if (status === 'Conflicted') return 'FileQuestion';
+    return 'File';
+  },
+
+  getColor(status: FileStatus): string {
+    if (status === 'Added' || status === 'Untracked') return 'text-green-500';
+    if (status === 'Deleted') return 'text-red-500';
+    if (status === 'Modified') return 'text-yellow-500';
+    if (status === 'Conflicted') return 'text-orange-500';
+    return 'text-muted-foreground';
+  },
+
+  getLabel(status: FileStatus): string {
+    if (typeof status === 'object') {
+      if ('Renamed' in status) return 'R';
+      if ('Copied' in status) return 'C';
+    }
+    const labels: Record<string, string> = {
+      Modified: 'M', Added: 'A', Deleted: 'D',
+      Untracked: '?', Conflicted: '!',
+    };
+    return labels[status as string] ?? '';
+  },
+};
+```
+
+### Repository Interface (src/domain/interfaces/)
+
+```typescript
+// src/domain/interfaces/status.repository.ts
+import type { GitStatus } from '@/domain/value-objects';
+
+export interface IStatusRepository {
+  getStatus(repoPath: string): Promise<GitStatus>;
+}
+```
+
+### Infrastructure (src/infrastructure/repositories/)
+
+```typescript
+// src/infrastructure/repositories/tauri-status.repository.ts
+import { invoke } from '@tauri-apps/api/core';
+import type { IStatusRepository } from '@/domain/interfaces';
+import type { GitStatus } from '@/domain/value-objects';
+
+export class TauriStatusRepository implements IStatusRepository {
+  async getStatus(repoPath: string): Promise<GitStatus> {
+    return invoke('get_git_status', { repoPath });
+  }
+}
+```
+
+### Application Hooks (src/application/hooks/)
+
+```typescript
+// src/application/hooks/useGitStatus.ts
+import { useEffect, useCallback, useRef } from 'react';
+import { useRepositoryStore } from '@/application/stores';
+import { TauriStatusRepository } from '@/infrastructure/repositories';
+
+const statusRepository = new TauriStatusRepository();
+
+export function useGitStatus(pollInterval = 3000) {
+  const { currentRepo, setStatus, setRefreshing } = useRepositoryStore();
+  // ... implementation avec polling
+}
+```
+
+### Mapping des chemins (ancien → nouveau)
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/services/git/index.ts` | `src/infrastructure/repositories/tauri-status.repository.ts` |
+| `src/hooks/useGitStatus.ts` | `src/application/hooks/useGitStatus.ts` |
+| `src/hooks/index.ts` | `src/application/hooks/index.ts` |
+| `src/components/status/` | `src/presentation/components/status/` |
+| `getStatusIcon()` inline | `StatusClassifier.getIcon()` |
+| `getStatusColor()` inline | `StatusClassifier.getColor()` |
+
+---
+
 ## Tâche 5.1: Parser git status (backend)
 
 **Commit**: `feat: add git status parsing`
@@ -175,32 +311,43 @@ use commands::status::get_git_status;
 
 ---
 
-## Tâche 5.3: Créer GitService frontend
+## Tâche 5.3: Créer StatusRepository infrastructure
 
-**Commit**: `feat: add GitService for Tauri IPC`
+**Commit**: `feat: add status repository for Tauri IPC`
 
 **Fichiers**:
-- `src/services/git/index.ts`
+- `src/domain/interfaces/status.repository.ts`
+- `src/infrastructure/repositories/tauri-status.repository.ts`
+- `src/infrastructure/repositories/index.ts`
+- `src/domain/services/status-classifier.service.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/services/git/`
-- [ ] Créer `src/services/git/index.ts`:
+- [ ] Créer `src/domain/interfaces/status.repository.ts`:
+```typescript
+import type { GitStatus } from '@/domain/value-objects';
+
+export interface IStatusRepository {
+  getStatus(repoPath: string): Promise<GitStatus>;
+}
+```
+- [ ] Créer `src/infrastructure/repositories/tauri-status.repository.ts`:
 ```typescript
 import { invoke } from '@tauri-apps/api/core';
-import type { GitStatus, Repository } from '@/types/git';
+import type { IStatusRepository } from '@/domain/interfaces';
+import type { GitStatus } from '@/domain/value-objects';
 
-export class GitService {
-  constructor(private repoPath: string) {}
-
-  async getStatus(): Promise<GitStatus> {
-    return invoke('get_git_status', { repoPath: this.repoPath });
-  }
-
-  static async openRepository(path: string): Promise<Repository> {
-    return invoke('open_repository', { path });
+export class TauriStatusRepository implements IStatusRepository {
+  async getStatus(repoPath: string): Promise<GitStatus> {
+    return invoke('get_git_status', { repoPath });
   }
 }
 ```
+- [ ] Créer `src/infrastructure/repositories/index.ts`:
+```typescript
+export { TauriRepositoryRepository } from './tauri-repository.repository';
+export { TauriStatusRepository } from './tauri-status.repository';
+```
+- [ ] Créer `src/domain/services/status-classifier.service.ts` (voir Architecture DDD)
 
 ---
 
@@ -209,16 +356,18 @@ export class GitService {
 **Commit**: `feat: add useGitStatus hook with polling`
 
 **Fichiers**:
-- `src/hooks/useGitStatus.ts`
-- `src/hooks/index.ts`
+- `src/application/hooks/useGitStatus.ts`
+- `src/application/hooks/index.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/hooks/`
-- [ ] Créer `src/hooks/useGitStatus.ts`:
+- [ ] Créer le dossier `src/application/hooks/`
+- [ ] Créer `src/application/hooks/useGitStatus.ts`:
 ```typescript
 import { useEffect, useCallback, useRef } from 'react';
-import { useRepositoryStore } from '@/store';
-import { GitService } from '@/services/git';
+import { useRepositoryStore } from '@/application/stores';
+import { TauriStatusRepository } from '@/infrastructure/repositories';
+
+const statusRepository = new TauriStatusRepository();
 
 export function useGitStatus(pollInterval = 3000) {
   const { currentRepo, setStatus, setRefreshing } = useRepositoryStore();
@@ -229,8 +378,7 @@ export function useGitStatus(pollInterval = 3000) {
 
     try {
       setRefreshing(true);
-      const git = new GitService(currentRepo.path);
-      const status = await git.getStatus();
+      const status = await statusRepository.getStatus(currentRepo.path);
       setStatus(status);
     } catch (error) {
       console.error('Failed to fetch status:', error);
@@ -271,8 +419,9 @@ export function useGitStatus(pollInterval = 3000) {
   return { refresh: fetchStatus };
 }
 ```
-- [ ] Créer `src/hooks/index.ts`:
+- [ ] Créer `src/application/hooks/index.ts`:
 ```typescript
+export { useRepository } from './useRepository';
 export { useGitStatus } from './useGitStatus';
 ```
 
@@ -283,12 +432,12 @@ export { useGitStatus } from './useGitStatus';
 **Commit**: `feat: add StatusView component`
 
 **Fichiers**:
-- `src/components/status/StatusView.tsx`
-- `src/components/status/index.ts`
+- `src/presentation/components/status/StatusView.tsx`
+- `src/presentation/components/status/index.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/components/status/`
-- [ ] Créer `src/components/status/StatusView.tsx`:
+- [ ] Créer le dossier `src/presentation/components/status/`
+- [ ] Créer `src/presentation/components/status/StatusView.tsx`:
 ```typescript
 import {
   ResizableHandle,
@@ -297,8 +446,8 @@ import {
 } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileTree } from './FileTree';
-import { useRepositoryStore, useUIStore } from '@/store';
-import { useGitStatus } from '@/hooks';
+import { useRepositoryStore, useUIStore } from '@/application/stores';
+import { useGitStatus } from '@/application/hooks';
 
 export function StatusView() {
   const { status } = useRepositoryStore();
@@ -353,7 +502,7 @@ export function StatusView() {
   );
 }
 ```
-- [ ] Créer `src/components/status/index.ts`:
+- [ ] Créer `src/presentation/components/status/index.ts`:
 ```typescript
 export { StatusView } from './StatusView';
 export { FileTree } from './FileTree';
@@ -367,11 +516,11 @@ export { FileItem } from './FileItem';
 **Commit**: `feat: add FileTree component`
 
 **Fichiers**:
-- `src/components/status/FileTree.tsx`
-- `src/components/status/FileItem.tsx`
+- `src/presentation/components/status/FileTree.tsx`
+- `src/presentation/components/status/FileItem.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/status/FileTree.tsx`:
+- [ ] Créer `src/presentation/components/status/FileTree.tsx`:
 ```typescript
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
@@ -379,7 +528,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FileItem } from './FileItem';
-import type { StatusEntry } from '@/types/git';
+import type { StatusEntry } from '@/domain/entities';
 
 interface FileTreeProps {
   title: string;
@@ -422,48 +571,28 @@ export function FileTree({ title, files, type }: FileTreeProps) {
   );
 }
 ```
-- [ ] Créer `src/components/status/FileItem.tsx`:
+- [ ] Créer `src/presentation/components/status/FileItem.tsx`:
 ```typescript
 import { File, FileText, FilePlus, FileMinus, FileQuestion } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUIStore } from '@/store';
+import { useUIStore } from '@/application/stores';
+import { StatusClassifier } from '@/domain/services/status-classifier.service';
 import { cn } from '@/lib/utils';
-import type { StatusEntry, FileStatus } from '@/types/git';
+import type { StatusEntry, FileStatus } from '@/domain/entities';
+import type { FileStatus } from '@/domain/value-objects';
 
 interface FileItemProps {
   entry: StatusEntry;
   type: 'staged' | 'unstaged' | 'untracked' | 'conflicted';
 }
 
+const iconMap: Record<string, typeof File> = {
+  FilePlus, FileMinus, FileText, FileQuestion, File,
+};
+
 function getStatusIcon(status: FileStatus) {
-  if (status === 'Added' || status === 'Untracked') return FilePlus;
-  if (status === 'Deleted') return FileMinus;
-  if (status === 'Modified') return FileText;
-  if (status === 'Conflicted') return FileQuestion;
-  return File;
-}
-
-function getStatusColor(status: FileStatus) {
-  if (status === 'Added' || status === 'Untracked') return 'text-green-500';
-  if (status === 'Deleted') return 'text-red-500';
-  if (status === 'Modified') return 'text-yellow-500';
-  if (status === 'Conflicted') return 'text-orange-500';
-  return 'text-muted-foreground';
-}
-
-function getStatusLabel(status: FileStatus): string {
-  if (typeof status === 'object') {
-    if ('Renamed' in status) return 'R';
-    if ('Copied' in status) return 'C';
-  }
-  const labels: Record<string, string> = {
-    Modified: 'M',
-    Added: 'A',
-    Deleted: 'D',
-    Untracked: '?',
-    Conflicted: '!',
-  };
-  return labels[status as string] ?? '';
+  const iconName = StatusClassifier.getIcon(status);
+  return iconMap[iconName] ?? File;
 }
 
 export function FileItem({ entry, type }: FileItemProps) {
@@ -472,8 +601,8 @@ export function FileItem({ entry, type }: FileItemProps) {
 
   const status = type === 'staged' ? entry.index_status : entry.worktree_status;
   const Icon = getStatusIcon(status);
-  const color = getStatusColor(status);
-  const label = getStatusLabel(status);
+  const color = StatusClassifier.getColor(status);
+  const label = StatusClassifier.getLabel(status);
 
   const fileName = entry.path.split('/').pop() ?? entry.path;
   const dirPath = entry.path.includes('/')
@@ -508,7 +637,7 @@ export function FileItem({ entry, type }: FileItemProps) {
 ```
 - [ ] Mettre à jour `src/App.tsx` pour utiliser `StatusView`:
 ```typescript
-import { StatusView } from '@/components/status';
+import { StatusView } from '@/presentation/components/status';
 
 // Dans renderView(), remplacer le placeholder:
 case 'status':

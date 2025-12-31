@@ -5,6 +5,62 @@ Gérer les branches (CRUD, checkout).
 
 ---
 
+## Architecture DDD
+
+### Aggregate: Branch
+
+**Root Entity:** `Branch`
+
+**Invariants:**
+- Le nom de branche doit suivre les conventions Git
+- Ne peut pas supprimer la branche courante
+- Ne peut pas supprimer une branche avec des commits non mergés (sans force)
+
+### Value Objects
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `BranchName` | `branch-name.vo.ts` | Nom de branche validé |
+| `TrackingInfo` | `tracking-info.vo.ts` | Info de suivi (remote, ahead, behind) |
+
+### Domain Events
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `BranchCreated` | `branch-created.event.ts` | `{ name: string, startPoint?: string }` |
+| `BranchDeleted` | `branch-deleted.event.ts` | `{ name: string, forced: boolean }` |
+| `BranchCheckedOut` | `branch-checked-out.event.ts` | `{ name: string, previousBranch?: string }` |
+
+### Repository Interface
+
+```typescript
+// src/domain/interfaces/branch.repository.ts
+import type { Branch } from '@/domain/entities';
+
+export interface IBranchRepository {
+  getAll(repoPath: string): Promise<Branch[]>;
+  create(repoPath: string, name: string, startPoint?: string): Promise<void>;
+  delete(repoPath: string, name: string, force: boolean): Promise<void>;
+  checkout(repoPath: string, name: string): Promise<void>;
+}
+```
+
+### Infrastructure
+
+- `TauriBranchRepository` - `src/infrastructure/repositories/tauri-branch.repository.ts`
+
+### Application Hooks
+
+- `useBranches` - `src/application/hooks/useBranches.ts`
+
+### Mapping des chemins
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/components/branches/` | `src/presentation/components/branches/` |
+
+---
+
 ## Tâche 11.1: Parser branches (backend)
 
 **Commit**: `feat: add branch parsing`

@@ -5,6 +5,125 @@ Afficher les différences de fichiers en mode unified et side-by-side.
 
 ---
 
+## Architecture DDD
+
+### Aggregate: FileDiff
+
+**Root Entity:** `FileDiff`
+
+**Entités enfants:** `DiffHunk`, `DiffLine`
+
+**Invariants:**
+- Un fichier binaire n'a pas de hunks
+- Chaque hunk a au moins une ligne
+- Les numéros de ligne doivent être cohérents
+
+### Value Objects (utilisés)
+
+| Value Object | Fichier | Description |
+|--------------|---------|-------------|
+| `FileDiff` | `file-diff.vo.ts` | Diff complet d'un fichier |
+| `DiffHunk` | `diff-hunk.vo.ts` | Bloc de diff |
+| `DiffLine` | `diff-hunk.vo.ts` | Ligne de diff |
+| `DiffLineType` | `diff-hunk.vo.ts` | Type de ligne (Context, Addition, Deletion) |
+| `DiffMode` | `diff-mode.vo.ts` | Mode d'affichage (unified, split) |
+
+### Domain Events (src/domain/events/)
+
+| Event | Fichier | Payload |
+|-------|---------|---------|
+| `DiffLoaded` | `diff-loaded.event.ts` | `{ path: string, diff: FileDiff }` |
+
+### Domain Services (src/domain/services/)
+
+```typescript
+// src/domain/services/diff-formatter.service.ts
+import type { DiffHunk, DiffLine, DiffLineType } from '@/domain/value-objects';
+
+export const DiffFormatter = {
+  getLineStyle(lineType: DiffLineType): string {
+    const styles: Record<DiffLineType, string> = {
+      Context: 'bg-transparent',
+      Addition: 'bg-green-500/10 text-green-700 dark:text-green-400',
+      Deletion: 'bg-red-500/10 text-red-700 dark:text-red-400',
+      Header: 'bg-muted text-muted-foreground',
+    };
+    return styles[lineType];
+  },
+
+  getLinePrefix(lineType: DiffLineType): string {
+    if (lineType === 'Addition') return '+';
+    if (lineType === 'Deletion') return '-';
+    return ' ';
+  },
+};
+```
+
+### Repository Interface (src/domain/interfaces/)
+
+```typescript
+// src/domain/interfaces/diff.repository.ts
+import type { FileDiff } from '@/domain/value-objects';
+
+export interface IDiffRepository {
+  getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<FileDiff>;
+  getCommitDiff(repoPath: string, hash: string): Promise<FileDiff[]>;
+}
+```
+
+### Infrastructure (src/infrastructure/repositories/)
+
+```typescript
+// src/infrastructure/repositories/tauri-diff.repository.ts
+import { invoke } from '@tauri-apps/api/core';
+import type { IDiffRepository } from '@/domain/interfaces';
+import type { FileDiff } from '@/domain/value-objects';
+
+export class TauriDiffRepository implements IDiffRepository {
+  async getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<FileDiff> {
+    return invoke('get_file_diff', { repoPath, filePath, staged });
+  }
+  async getCommitDiff(repoPath: string, hash: string): Promise<FileDiff[]> {
+    return invoke('get_commit_diff', { repoPath, hash });
+  }
+}
+```
+
+### Application Hooks (src/application/hooks/)
+
+```typescript
+// src/application/hooks/useDiff.ts
+import { useState, useEffect } from 'react';
+import { TauriDiffRepository } from '@/infrastructure/repositories';
+import { useRepositoryStore } from '@/application/stores';
+import type { FileDiff } from '@/domain/value-objects';
+
+const diffRepository = new TauriDiffRepository();
+
+export function useDiff(path: string, staged: boolean, commitHash?: string) {
+  const { currentRepo } = useRepositoryStore();
+  const [diff, setDiff] = useState<FileDiff | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // ... fetch diff logic
+  }, [path, staged, commitHash, currentRepo]);
+
+  return { diff, loading, error };
+}
+```
+
+### Mapping des chemins (ancien → nouveau)
+
+| Ancien | Nouveau |
+|--------|---------|
+| `src/services/git/index.ts` (diff) | `src/infrastructure/repositories/tauri-diff.repository.ts` |
+| `src/components/diff/` | `src/presentation/components/diff/` |
+| Styles inline | `DiffFormatter.getLineStyle()` |
+
+---
+
 ## Tâche 7.1: Parser diff (backend)
 
 **Commit**: `feat: add unified diff parser`
