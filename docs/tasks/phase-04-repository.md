@@ -137,12 +137,12 @@ export function useRepository() {
 - `src-tauri/src/lib.rs`
 
 **Actions**:
-- [ ] Créer le dossier `src-tauri/src/commands/`
-- [ ] Créer `src-tauri/src/commands/mod.rs`:
+- [x] Créer le dossier `src-tauri/src/commands/`
+- [x] Créer `src-tauri/src/commands/mod.rs`:
 ```rust
 pub mod repository;
 ```
-- [ ] Créer `src-tauri/src/commands/repository.rs`:
+- [x] Créer `src-tauri/src/commands/repository.rs`:
 ```rust
 use crate::git::{executor::GitExecutor, types::Repository};
 
@@ -183,7 +183,7 @@ pub async fn open_repository(path: String) -> Result<Repository, String> {
     })
 }
 ```
-- [ ] Mettre à jour `src-tauri/src/lib.rs` pour ajouter le module commands et enregistrer la commande:
+- [x] Mettre à jour `src-tauri/src/lib.rs` pour ajouter le module commands et enregistrer la commande:
 ```rust
 mod git;
 mod commands;
@@ -217,11 +217,11 @@ pub fn run() {
 - `src/application/hooks/useRepository.ts`
 
 **Actions**:
-- [ ] Créer `src/domain/interfaces/repository.repository.ts` (voir Architecture DDD)
-- [ ] Créer `src/infrastructure/repositories/tauri-repository.repository.ts` (voir Architecture DDD)
-- [ ] Créer `src/application/hooks/useRepository.ts` (voir Architecture DDD)
-- [ ] Créer le dossier `src/presentation/components/repository/`
-- [ ] Créer `src/presentation/components/repository/RepositorySelector.tsx`:
+- [x] Créer `src/domain/interfaces/repository.repository.ts` (voir Architecture DDD)
+- [x] Créer `src/infrastructure/repositories/tauri-repository.repository.ts` (voir Architecture DDD)
+- [x] Créer `src/application/hooks/useRepository.ts` (voir Architecture DDD)
+- [x] Créer le dossier `src/presentation/components/repository/`
+- [x] Créer `src/presentation/components/repository/RepositorySelector.tsx`:
 ```typescript
 import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -335,11 +335,11 @@ export function RepositorySelector() {
   );
 }
 ```
-- [ ] Créer `src/presentation/components/repository/index.ts`:
+- [x] Créer `src/presentation/components/repository/index.ts`:
 ```typescript
 export { RepositorySelector } from './RepositorySelector';
 ```
-- [ ] Mettre à jour `src/presentation/components/layout/Toolbar.tsx` pour utiliser `RepositorySelector`:
+- [x] Mettre à jour `src/presentation/components/layout/Toolbar.tsx` pour utiliser `RepositorySelector`:
 ```typescript
 // Remplacer le bouton Open par:
 import { RepositorySelector } from '@/presentation/components/repository';
@@ -358,10 +358,10 @@ import { RepositorySelector } from '@/presentation/components/repository';
 - `src/application/stores/repository.store.ts` (déjà fait dans 3.1, vérifier)
 
 **Actions**:
-- [ ] Vérifier que `zustand/persist` est configuré dans `repository.store.ts`
-- [ ] Vérifier que `recentRepos` est bien persisté
+- [x] Vérifier que `zustand/persist` est configuré dans `repository.store.ts`
+- [x] Vérifier que `recentRepos` est bien persisté
 - [ ] Tester en ouvrant un repo, fermant l'app, et réouvrant
 
 ---
 
-## Progression: 0/3
+## Progression: 3/3
