@@ -3,3 +3,4 @@ pub mod types;
 pub mod executor;
 pub mod path;
 pub mod status;
+pub mod diff;
