@@ -1,50 +1,83 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { AppLayout } from '@/presentation/components/layout';
+import { useUIStore } from '@/application/stores';
+
+// Placeholder views - will be implemented in later phases
+function StatusView() {
+  return (
+    <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="text-center">
+        <h2 className="text-lg font-medium">Changes</h2>
+        <p className="text-sm">Open a repository to see changes</p>
+      </div>
+    </div>
+  );
+}
+
+function HistoryView() {
+  return (
+    <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="text-center">
+        <h2 className="text-lg font-medium">History</h2>
+        <p className="text-sm">Commit history will appear here</p>
+      </div>
+    </div>
+  );
+}
+
+function BranchesView() {
+  return (
+    <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="text-center">
+        <h2 className="text-lg font-medium">Branches</h2>
+        <p className="text-sm">Branch management will appear here</p>
+      </div>
+    </div>
+  );
+}
+
+function StashView() {
+  return (
+    <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="text-center">
+        <h2 className="text-lg font-medium">Stash</h2>
+        <p className="text-sm">Stashed changes will appear here</p>
+      </div>
+    </div>
+  );
+}
+
+function SettingsView() {
+  return (
+    <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="text-center">
+        <h2 className="text-lg font-medium">Settings</h2>
+        <p className="text-sm">Application settings will appear here</p>
+      </div>
+    </div>
+  );
+}
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const { currentView } = useUIStore();
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const renderView = () => {
+    switch (currentView) {
+      case 'status':
+        return <StatusView />;
+      case 'history':
+        return <HistoryView />;
+      case 'branches':
+        return <BranchesView />;
+      case 'stash':
+        return <StashView />;
+      case 'settings':
+        return <SettingsView />;
+      default:
+        return <StatusView />;
+    }
+  };
 
-  return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
-  );
+  return <AppLayout>{renderView()}</AppLayout>;
 }
 
 export default App;
