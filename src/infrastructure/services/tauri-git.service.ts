@@ -49,6 +49,10 @@ export const tauriGitService: IGitRepository = {
     return invoke('get_file_diff', { repoPath, filePath, staged });
   },
 
+  async getCommitDiff(repoPath: string, hash: string): Promise<FileDiff[]> {
+    return invoke('get_commit_diff', { repoPath, hash });
+  },
+
   // Staging operations
   async stageFile(repoPath: string, filePath: string): Promise<void> {
     return invoke('stage_file', { repoPath, filePath });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { FileTree } from './FileTree';
+import { DiffViewer } from '../diff';
 import { useRepositoryStore, useUIStore } from '@/application/stores';
 import { useGitStatus, useStagingActions } from '@/application/hooks';
 
@@ -32,6 +33,13 @@ export function StatusView() {
 
   // Start status polling
   useGitStatus();
+
+  // Determine if the selected file is staged
+  const selectedFile = selectedFiles[0] ?? null;
+  const isSelectedFileStaged = useMemo(() => {
+    if (!selectedFile || !status) return false;
+    return status.staged.some((f) => f.path === selectedFile);
+  }, [selectedFile, status]);
 
   const handleDiscardRequest = (path: string, isUntracked: boolean) => {
     setDiscardDialog({ open: true, path, isUntracked });
@@ -79,13 +87,15 @@ export function StatusView() {
 
         <ResizableHandle withHandle />
 
-        {/* Right panel: Diff viewer placeholder */}
+        {/* Right panel: Diff viewer */}
         <ResizablePanel defaultSize={70}>
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            {selectedFiles.length > 0
-              ? `Selected: ${selectedFiles[0]}`
-              : 'Select a file to view changes'}
-          </div>
+          {selectedFile ? (
+            <DiffViewer path={selectedFile} staged={isSelectedFileStaged} />
+          ) : (
+            <div className="flex h-full items-center justify-center text-muted-foreground">
+              Select a file to view changes
+            </div>
+          )}
         </ResizablePanel>
       </ResizablePanelGroup>
 
