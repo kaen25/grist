@@ -54,3 +54,8 @@ pub fn get_repository_info(path: String) -> Result<Repository, String> {
 pub fn is_git_repository(path: String) -> bool {
     Path::new(&path).join(".git").exists()
 }
+
+#[tauri::command]
+pub async fn open_repository(path: String) -> Result<Repository, String> {
+    get_repository_info(path)
+}
