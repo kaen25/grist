@@ -1,10 +1,11 @@
 import { ChevronDown, ChevronRight, Plus, Minus } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FileItem } from './FileItem';
 import { useStagingActions } from '@/application/hooks';
+import { useUIStore } from '@/application/stores';
 import type { StatusEntry } from '@/domain/entities';
 
 interface FileTreeProps {
@@ -16,7 +17,16 @@ interface FileTreeProps {
 
 export function FileTree({ title, files, type, onDiscardRequest }: FileTreeProps) {
   const [isOpen, setIsOpen] = useState(true);
-  const { stageAll, unstageAll } = useStagingActions();
+  const { stageAll, unstageAll, stageFile, unstageFile } = useStagingActions();
+  const { selectedFiles } = useUIStore();
+
+  const allFilePaths = useMemo(() => files.map((f) => f.path), [files]);
+
+  // Get selected files that belong to this tree
+  const selectedInTree = useMemo(
+    () => selectedFiles.filter((f) => allFilePaths.includes(f)),
+    [selectedFiles, allFilePaths]
+  );
 
   if (files.length === 0) return null;
 
@@ -28,6 +38,20 @@ export function FileTree({ title, files, type, onDiscardRequest }: FileTreeProps
   const handleUnstageAll = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await unstageAll();
+  };
+
+  const handleStageSelected = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    for (const path of selectedInTree) {
+      await stageFile(path);
+    }
+  };
+
+  const handleUnstageSelected = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    for (const path of selectedInTree) {
+      await unstageFile(path);
+    }
   };
 
   return (
@@ -50,7 +74,19 @@ export function FileTree({ title, files, type, onDiscardRequest }: FileTreeProps
             </Badge>
           </Button>
         </CollapsibleTrigger>
-        {type === 'staged' && (
+        {type === 'staged' && selectedInTree.length > 1 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={handleUnstageSelected}
+            title={`Unstage ${selectedInTree.length} selected`}
+          >
+            <Minus className="h-3 w-3 mr-1" />
+            {selectedInTree.length}
+          </Button>
+        )}
+        {type === 'staged' && selectedInTree.length <= 1 && (
           <Button
             variant="ghost"
             size="icon"
@@ -61,7 +97,19 @@ export function FileTree({ title, files, type, onDiscardRequest }: FileTreeProps
             <Minus className="h-3 w-3" />
           </Button>
         )}
-        {(type === 'unstaged' || type === 'untracked') && (
+        {(type === 'unstaged' || type === 'untracked') && selectedInTree.length > 1 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={handleStageSelected}
+            title={`Stage ${selectedInTree.length} selected`}
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            {selectedInTree.length}
+          </Button>
+        )}
+        {(type === 'unstaged' || type === 'untracked') && selectedInTree.length <= 1 && (
           <Button
             variant="ghost"
             size="icon"
@@ -80,6 +128,7 @@ export function FileTree({ title, files, type, onDiscardRequest }: FileTreeProps
               key={file.path}
               entry={file}
               type={type}
+              allFilePaths={allFilePaths}
               onDiscardRequest={onDiscardRequest}
             />
           ))}

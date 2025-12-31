@@ -16,6 +16,7 @@ import type { FileStatus } from '@/domain/value-objects';
 interface FileItemProps {
   entry: StatusEntry;
   type: 'staged' | 'unstaged' | 'untracked' | 'conflicted';
+  allFilePaths: string[];
   onDiscardRequest?: (path: string, isUntracked: boolean) => void;
 }
 
@@ -32,13 +33,16 @@ function getStatusIcon(status: FileStatus) {
   return iconMap[iconName] ?? File;
 }
 
-export function FileItem({ entry, type, onDiscardRequest }: FileItemProps) {
-  const { selectedFiles, setSelectedFiles, toggleFileSelection } = useUIStore();
+export function FileItem({ entry, type, allFilePaths, onDiscardRequest }: FileItemProps) {
+  const { selectedFiles, setSelectedFiles, toggleFileSelection, selectFileRange } = useUIStore();
   const { stageFile, unstageFile } = useStagingActions();
   const isSelected = selectedFiles.includes(entry.path);
 
   const handleClick = (e: React.MouseEvent) => {
-    if (e.ctrlKey || e.metaKey) {
+    if (e.shiftKey) {
+      // Shift+click: range selection
+      selectFileRange(entry.path, allFilePaths);
+    } else if (e.ctrlKey || e.metaKey) {
       // Ctrl+click: toggle selection
       toggleFileSelection(entry.path);
     } else {
