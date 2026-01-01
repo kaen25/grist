@@ -6,3 +6,4 @@ pub mod status;
 pub mod diff;
 pub mod commit;
 pub mod log;
+pub mod branch;
