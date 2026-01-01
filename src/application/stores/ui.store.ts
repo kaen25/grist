@@ -20,6 +20,7 @@ interface UIState {
   setSelectedFiles: (files: string[]) => void;
   toggleFileSelection: (file: string) => void;
   selectFileRange: (file: string, allFiles: string[]) => void;
+  clearSelection: () => void;
   setSelectedCommit: (hash: string | null) => void;
   toggleSidebar: () => void;
   setDiffMode: (mode: DiffMode) => void;
@@ -71,6 +72,7 @@ export const useUIStore = create<UIState>()(
           const newSelection = new Set([...state.selectedFiles, ...rangeFiles]);
           return { selectedFiles: Array.from(newSelection) };
         }),
+      clearSelection: () => set({ selectedFiles: [], lastSelectedFile: null }),
       setSelectedCommit: (selectedCommit) => set({ selectedCommit }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setDiffMode: (diffMode) => set({ diffMode }),

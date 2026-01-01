@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { FileTree } from './FileTree';
+import { SelectionActionBar } from './SelectionActionBar';
 import { DiffViewer } from '../diff';
 import { CommitPanel } from '../commit';
 import { useRepositoryStore, useUIStore } from '@/application/stores';
@@ -150,6 +151,7 @@ export function StatusView() {
               )}
             </div>
           </ScrollArea>
+          <SelectionActionBar />
           <CommitPanel />
           </div>
         </ResizablePanel>
