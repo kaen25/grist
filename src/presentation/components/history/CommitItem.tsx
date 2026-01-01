@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GitBranch, Trash2, Copy, Check, Pencil } from 'lucide-react';
+import { GitBranch, Trash2, Copy, Check, Pencil, Tag } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -82,11 +82,15 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
   const { currentRepo } = useRepositoryStore();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [showCreateTagDialog, setShowCreateTagDialog] = useState(false);
   const [branchName, setBranchName] = useState('');
   const [renameFrom, setRenameFrom] = useState('');
   const [renameTo, setRenameTo] = useState('');
+  const [tagName, setTagName] = useState('');
+  const [tagMessage, setTagMessage] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Get local branches on this commit
@@ -102,6 +106,14 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
     .filter((ref) => {
       const { isTag, isRemote } = formatRef(ref);
       return !isTag && isRemote;
+    })
+    .map((ref) => formatRef(ref));
+
+  // Get tags on this commit
+  const tags = commit.refs
+    .filter((ref) => {
+      const { isTag } = formatRef(ref);
+      return isTag;
     })
     .map((ref) => formatRef(ref));
 
@@ -175,6 +187,54 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCreateTag = async () => {
+    if (!currentRepo || !tagName.trim()) return;
+
+    setIsCreatingTag(true);
+    try {
+      await tauriGitService.createTag(
+        currentRepo.path,
+        tagName.trim(),
+        commit.hash,
+        tagMessage.trim() || undefined
+      );
+      toast.success(`Created tag "${tagName}" at ${commit.short_hash}`);
+      setTagName('');
+      setTagMessage('');
+      setShowCreateTagDialog(false);
+      onBranchChange?.();
+    } catch (error) {
+      toast.error(`Failed to create tag: ${error}`);
+    } finally {
+      setIsCreatingTag(false);
+    }
+  };
+
+  const handleDeleteTag = async (name: string) => {
+    if (!currentRepo) return;
+
+    try {
+      await tauriGitService.deleteTag(currentRepo.path, name);
+      toast.success(`Deleted tag "${name}"`);
+      onBranchChange?.();
+    } catch (error) {
+      toast.error(`Failed to delete tag: ${error}`);
+    }
+  };
+
+  const handleDeleteRemoteTag = async (name: string) => {
+    if (!currentRepo) return;
+
+    try {
+      // Delete from origin by default
+      await tauriGitService.deleteRemoteTag(currentRepo.path, 'origin', name);
+      toast.success(`Deleted remote tag "${name}"`);
+      onBranchChange?.();
+    } catch (error) {
+      toast.error(`Failed to delete remote tag: ${error}`);
+    }
+  };
+
   return (
     <>
       <ContextMenu>
@@ -235,6 +295,10 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
             <GitBranch className="h-4 w-4 mr-2" />
             Create branch here...
           </ContextMenuItem>
+          <ContextMenuItem onClick={() => setShowCreateTagDialog(true)}>
+            <Tag className="h-4 w-4 mr-2" />
+            Create tag here...
+          </ContextMenuItem>
 
           {/* Local branches: rename and delete */}
           {localBranches.length > 0 && (
@@ -274,6 +338,33 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete remote "{branch.label}"
+                </ContextMenuItem>
+              ))}
+            </>
+          )}
+
+          {/* Tags: delete local and remote */}
+          {tags.length > 0 && (
+            <>
+              <ContextMenuSeparator />
+              {tags.map((tag) => (
+                <ContextMenuItem
+                  key={`delete-tag-${tag.label}`}
+                  onClick={() => handleDeleteTag(tag.label)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete tag "{tag.label}"
+                </ContextMenuItem>
+              ))}
+              {tags.map((tag) => (
+                <ContextMenuItem
+                  key={`delete-remote-tag-${tag.label}`}
+                  onClick={() => handleDeleteRemoteTag(tag.label)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete remote tag "{tag.label}"
                 </ContextMenuItem>
               ))}
             </>
@@ -359,6 +450,54 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
               disabled={!renameTo.trim() || renameTo === renameFrom || isRenaming}
             >
               {isRenaming ? 'Renaming...' : 'Rename'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Tag Dialog */}
+      <Dialog open={showCreateTagDialog} onOpenChange={setShowCreateTagDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Tag at {commit.short_hash}</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="tag-name">Tag Name</Label>
+              <Input
+                id="tag-name"
+                value={tagName}
+                onChange={(e) => setTagName(e.target.value)}
+                placeholder="v1.0.0"
+                disabled={isCreatingTag}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="tag-message">Message (optional, for annotated tag)</Label>
+              <Input
+                id="tag-message"
+                value={tagMessage}
+                onChange={(e) => setTagMessage(e.target.value)}
+                placeholder="Release version 1.0.0"
+                disabled={isCreatingTag}
+                className="mt-2"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && tagName.trim()) {
+                    handleCreateTag();
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateTagDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateTag} disabled={!tagName.trim() || isCreatingTag}>
+              {isCreatingTag ? 'Creating...' : 'Create'}
             </Button>
           </DialogFooter>
         </DialogContent>

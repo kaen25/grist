@@ -1,4 +1,4 @@
-import type { Repository, Branch, Commit, Remote, Stash } from '@/domain/entities';
+import type { Repository, Branch, Commit, Remote, Stash, Tag } from '@/domain/entities';
 import type { GitStatus, FileDiff } from '@/domain/value-objects';
 
 export interface IGitRepository {
@@ -28,6 +28,12 @@ export interface IGitRepository {
 
   // Stash
   getStashes(repoPath: string): Promise<Stash[]>;
+
+  // Tags
+  getTags(repoPath: string): Promise<Tag[]>;
+  createTag(repoPath: string, name: string, commit?: string, message?: string): Promise<void>;
+  deleteTag(repoPath: string, name: string): Promise<void>;
+  deleteRemoteTag(repoPath: string, remote: string, name: string): Promise<void>;
 
   // Diff
   getFileDiff(repoPath: string, filePath: string, staged: boolean, ignoreCr?: boolean): Promise<FileDiff>;

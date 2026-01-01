@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { IGitRepository } from '@/domain/interfaces';
-import type { Repository, Branch, Commit, Remote, Stash } from '@/domain/entities';
+import type { Repository, Branch, Commit, Remote, Stash, Tag } from '@/domain/entities';
 import type { GitStatus, FileDiff } from '@/domain/value-objects';
 
 /**
@@ -67,6 +67,22 @@ export const tauriGitService: IGitRepository = {
 
   async getStashes(repoPath: string): Promise<Stash[]> {
     return invoke('get_stashes', { repoPath });
+  },
+
+  async getTags(repoPath: string): Promise<Tag[]> {
+    return invoke('get_tags', { repoPath });
+  },
+
+  async createTag(repoPath: string, name: string, commit?: string, message?: string): Promise<void> {
+    return invoke('create_tag', { repoPath, name, commit, message });
+  },
+
+  async deleteTag(repoPath: string, name: string): Promise<void> {
+    return invoke('delete_tag', { repoPath, name });
+  },
+
+  async deleteRemoteTag(repoPath: string, remote: string, name: string): Promise<void> {
+    return invoke('delete_remote_tag', { repoPath, remote, name });
   },
 
   async getFileDiff(repoPath: string, filePath: string, staged: boolean, ignoreCr = true): Promise<FileDiff> {

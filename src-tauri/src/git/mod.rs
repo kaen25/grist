@@ -7,3 +7,4 @@ pub mod diff;
 pub mod commit;
 pub mod log;
 pub mod branch;
+pub mod tag;

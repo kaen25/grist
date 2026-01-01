@@ -9,6 +9,7 @@ use commands::{
     create_commit, get_last_commit_message,
     get_commit_log,
     get_branches, create_branch, delete_branch, checkout_branch, rename_branch, delete_remote_branch,
+    get_tags, create_tag, delete_tag, delete_remote_tag,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -42,7 +43,11 @@ pub fn run() {
             delete_branch,
             checkout_branch,
             rename_branch,
-            delete_remote_branch
+            delete_remote_branch,
+            get_tags,
+            create_tag,
+            delete_tag,
+            delete_remote_tag
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
