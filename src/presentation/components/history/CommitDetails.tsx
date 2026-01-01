@@ -117,9 +117,9 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
       </ScrollArea>
 
       {/* Files changed */}
-      <div className="flex-1 overflow-hidden flex">
+      <div className="flex-1 min-h-0 flex">
         {/* File list */}
-        <div className="w-56 border-r flex flex-col">
+        <div className="w-56 border-r flex flex-col min-h-0">
           <div className="px-3 py-2 border-b">
             <h4 className="text-xs font-medium text-muted-foreground">
               Files changed ({files.length})
