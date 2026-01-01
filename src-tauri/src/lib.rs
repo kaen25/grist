@@ -6,6 +6,7 @@ use commands::{
     stage_file, stage_all, unstage_file, unstage_all, discard_changes,
     get_file_diff, get_commit_diff, get_untracked_file_diff, stage_lines, unstage_lines,
     create_commit, get_last_commit_message,
+    get_commit_log,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -31,7 +32,8 @@ pub fn run() {
             stage_lines,
             unstage_lines,
             create_commit,
-            get_last_commit_message
+            get_last_commit_message,
+            get_commit_log
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

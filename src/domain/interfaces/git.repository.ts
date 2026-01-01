@@ -16,6 +16,7 @@ export interface IGitRepository {
 
   // Commits
   getCommits(repoPath: string, limit?: number): Promise<Commit[]>;
+  getCommitLog(repoPath: string, count: number, skip: number): Promise<Commit[]>;
 
   // Remotes
   getRemotes(repoPath: string): Promise<Remote[]>;

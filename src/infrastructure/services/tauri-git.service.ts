@@ -34,7 +34,11 @@ export const tauriGitService: IGitRepository = {
   },
 
   async getCommits(repoPath: string, limit = 100): Promise<Commit[]> {
-    return invoke('get_commits', { repoPath, limit });
+    return invoke('get_commit_log', { repoPath, count: limit, skip: 0 });
+  },
+
+  async getCommitLog(repoPath: string, count: number, skip: number): Promise<Commit[]> {
+    return invoke('get_commit_log', { repoPath, count, skip });
   },
 
   async getRemotes(repoPath: string): Promise<Remote[]> {

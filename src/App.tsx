@@ -1,20 +1,10 @@
 import { AppLayout } from '@/presentation/components/layout';
 import { StatusView } from '@/presentation/components/status';
+import { HistoryView } from '@/presentation/components/history';
 import { useUIStore } from '@/application/stores';
 import { Toaster } from '@/components/ui/sonner';
 
 // Placeholder views - will be implemented in later phases
-
-function HistoryView() {
-  return (
-    <div className="flex h-full items-center justify-center text-muted-foreground">
-      <div className="text-center">
-        <h2 className="text-lg font-medium">History</h2>
-        <p className="text-sm">Commit history will appear here</p>
-      </div>
-    </div>
-  );
-}
 
 function BranchesView() {
   return (
