@@ -49,12 +49,14 @@ export function useHistory() {
     }
   }, [currentRepo, commits, isLoading, hasMore, setCommits]);
 
-  // Load initial commits when repo changes
+  const { refreshTrigger } = useRepositoryStore();
+
+  // Load initial commits when repo changes or refresh is triggered
   useEffect(() => {
     if (currentRepo) {
       loadInitialCommits();
     }
-  }, [currentRepo?.path]); // Only reload when path changes
+  }, [currentRepo?.path, refreshTrigger]); // Reload when path changes or refresh triggered
 
   return {
     commits,

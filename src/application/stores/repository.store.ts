@@ -12,6 +12,7 @@ interface RepositoryState {
   isLoading: boolean;
   isRefreshing: boolean;
   error: string | null;
+  refreshTrigger: number;
 
   setCurrentRepo: (repo: Repository | null) => void;
   addRecentRepo: (repo: Repository) => void;
@@ -21,6 +22,7 @@ interface RepositoryState {
   setLoading: (loading: boolean) => void;
   setRefreshing: (refreshing: boolean) => void;
   setError: (error: string | null) => void;
+  triggerRefresh: () => void;
 }
 
 export const useRepositoryStore = create<RepositoryState>()(
@@ -34,6 +36,7 @@ export const useRepositoryStore = create<RepositoryState>()(
       isLoading: false,
       isRefreshing: false,
       error: null,
+      refreshTrigger: 0,
 
       setCurrentRepo: (repo) => set({ currentRepo: repo }),
       addRecentRepo: (repo) =>
@@ -49,6 +52,7 @@ export const useRepositoryStore = create<RepositoryState>()(
       setLoading: (isLoading) => set({ isLoading }),
       setRefreshing: (isRefreshing) => set({ isRefreshing }),
       setError: (error) => set({ error }),
+      triggerRefresh: () => set((state) => ({ refreshTrigger: state.refreshTrigger + 1 })),
     }),
     {
       name: 'grist-repository',

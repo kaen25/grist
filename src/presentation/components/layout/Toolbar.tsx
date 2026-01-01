@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
 import type { Branch } from '@/domain/entities';
 
 export function Toolbar() {
-  const { currentRepo, status, isRefreshing } = useRepositoryStore();
+  const { currentRepo, status, isRefreshing, triggerRefresh } = useRepositoryStore();
   const { refreshStatus } = useGitService();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -168,6 +168,29 @@ export function Toolbar() {
             </ScrollArea>
           </DropdownMenuContent>
         </DropdownMenu>
+      )}
+
+      {currentRepo && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={async () => {
+            triggerRefresh();
+            await Promise.all([
+              loadBranches(),
+              refreshStatus(currentRepo.path),
+            ]);
+          }}
+          disabled={isRefreshing || isLoadingBranches}
+        >
+          <RefreshCw
+            className={cn(
+              'h-4 w-4',
+              (isRefreshing || isLoadingBranches) && 'animate-spin'
+            )}
+          />
+        </Button>
       )}
 
       <Separator orientation="vertical" className="h-6" />
