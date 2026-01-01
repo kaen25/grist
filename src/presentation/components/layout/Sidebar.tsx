@@ -1,4 +1,4 @@
-import { FolderGit2, Clock, Archive, Settings } from 'lucide-react';
+import { FolderGit2, GitBranch, Archive, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 const navItems: { id: ViewType; icon: typeof FolderGit2; label: string }[] = [
   { id: 'status', icon: FolderGit2, label: 'Changes' },
-  { id: 'history', icon: Clock, label: 'History' },
+  { id: 'history', icon: GitBranch, label: 'History' },
   { id: 'stash', icon: Archive, label: 'Stash' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
