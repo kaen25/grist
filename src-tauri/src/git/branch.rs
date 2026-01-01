@@ -113,3 +113,8 @@ pub fn rename_branch(executor: &GitExecutor, old_name: &str, new_name: &str) -> 
     executor.execute_checked(&["branch", "-m", old_name, new_name])?;
     Ok(())
 }
+
+pub fn delete_remote_branch(executor: &GitExecutor, remote: &str, branch: &str) -> Result<(), GitError> {
+    executor.execute_checked(&["push", remote, "--delete", branch])?;
+    Ok(())
+}

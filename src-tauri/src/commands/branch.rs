@@ -41,3 +41,13 @@ pub async fn rename_branch(
     let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
     branch::rename_branch(&executor, &old_name, &new_name).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn delete_remote_branch(
+    repo_path: String,
+    remote: String,
+    branch_name: String,
+) -> Result<(), String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+    branch::delete_remote_branch(&executor, &remote, &branch_name).map_err(|e| e.to_string())
+}

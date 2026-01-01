@@ -17,6 +17,7 @@ export interface IGitRepository {
   deleteBranch(repoPath: string, name: string, force?: boolean): Promise<void>;
   checkoutBranch(repoPath: string, name: string): Promise<void>;
   renameBranch(repoPath: string, oldName: string, newName: string): Promise<void>;
+  deleteRemoteBranch(repoPath: string, remote: string, branchName: string): Promise<void>;
 
   // Commits
   getCommits(repoPath: string, limit?: number): Promise<Commit[]>;

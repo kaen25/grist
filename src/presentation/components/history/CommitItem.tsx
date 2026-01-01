@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GitBranch, Trash2, Copy, Check } from 'lucide-react';
+import { GitBranch, Trash2, Copy, Check, Pencil } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -30,12 +30,16 @@ interface CommitItemProps {
   onBranchChange?: () => void;
 }
 
-function formatRef(ref: string): {
+interface RefInfo {
   label: string;
   isHead: boolean;
   isTag: boolean;
   isRemote: boolean;
-} {
+  remoteName: string | null;
+  branchName: string;
+}
+
+function formatRef(ref: string): RefInfo {
   const isHead = ref.startsWith('HEAD -> ');
   const isTag = ref.startsWith('tag: ') || ref.includes('refs/tags/');
   const isRemote = ref.includes('origin/') || ref.includes('refs/remotes/');
@@ -45,7 +49,17 @@ function formatRef(ref: string): {
     .replace('refs/heads/', '')
     .replace('refs/tags/', '')
     .replace('refs/remotes/', '');
-  return { label, isHead, isTag, isRemote };
+
+  // Parse remote name and branch name for remote branches
+  let remoteName: string | null = null;
+  let branchName = label;
+  if (isRemote && label.includes('/')) {
+    const parts = label.split('/');
+    remoteName = parts[0];
+    branchName = parts.slice(1).join('/');
+  }
+
+  return { label, isHead, isTag, isRemote, remoteName, branchName };
 }
 
 // Simple avatar with initials
@@ -67,17 +81,29 @@ function AuthorAvatar({ name }: { name: string }) {
 export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: CommitItemProps) {
   const { currentRepo } = useRepositoryStore();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [branchName, setBranchName] = useState('');
+  const [renameFrom, setRenameFrom] = useState('');
+  const [renameTo, setRenameTo] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Get local branches on this commit (for delete option)
+  // Get local branches on this commit
   const localBranches = commit.refs
     .filter((ref) => {
       const { isTag, isRemote } = formatRef(ref);
       return !isTag && !isRemote;
     })
-    .map((ref) => formatRef(ref).label);
+    .map((ref) => formatRef(ref));
+
+  // Get remote branches on this commit
+  const remoteBranches = commit.refs
+    .filter((ref) => {
+      const { isTag, isRemote } = formatRef(ref);
+      return !isTag && isRemote;
+    })
+    .map((ref) => formatRef(ref));
 
   const handleCreateBranch = async () => {
     if (!currentRepo || !branchName.trim()) return;
@@ -105,6 +131,40 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
       onBranchChange?.();
     } catch (error) {
       toast.error(`Failed to delete branch: ${error}`);
+    }
+  };
+
+  const handleDeleteRemoteBranch = async (remote: string, branch: string) => {
+    if (!currentRepo) return;
+
+    try {
+      await tauriGitService.deleteRemoteBranch(currentRepo.path, remote, branch);
+      toast.success(`Deleted remote branch "${remote}/${branch}"`);
+      onBranchChange?.();
+    } catch (error) {
+      toast.error(`Failed to delete remote branch: ${error}`);
+    }
+  };
+
+  const handleOpenRename = (name: string) => {
+    setRenameFrom(name);
+    setRenameTo(name);
+    setShowRenameDialog(true);
+  };
+
+  const handleRenameBranch = async () => {
+    if (!currentRepo || !renameTo.trim() || renameTo === renameFrom) return;
+
+    setIsRenaming(true);
+    try {
+      await tauriGitService.renameBranch(currentRepo.path, renameFrom, renameTo.trim());
+      toast.success(`Renamed branch "${renameFrom}" to "${renameTo}"`);
+      setShowRenameDialog(false);
+      onBranchChange?.();
+    } catch (error) {
+      toast.error(`Failed to rename branch: ${error}`);
+    } finally {
+      setIsRenaming(false);
     }
   };
 
@@ -176,17 +236,44 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
             Create branch here...
           </ContextMenuItem>
 
+          {/* Local branches: rename and delete */}
           {localBranches.length > 0 && (
             <>
               <ContextMenuSeparator />
-              {localBranches.map((name) => (
+              {localBranches.map((branch) => (
                 <ContextMenuItem
-                  key={name}
-                  onClick={() => handleDeleteBranch(name)}
+                  key={`rename-${branch.branchName}`}
+                  onClick={() => handleOpenRename(branch.branchName)}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Rename "{branch.branchName}"...
+                </ContextMenuItem>
+              ))}
+              {localBranches.map((branch) => (
+                <ContextMenuItem
+                  key={`delete-${branch.branchName}`}
+                  onClick={() => handleDeleteBranch(branch.branchName)}
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete "{name}"
+                  Delete "{branch.branchName}"
+                </ContextMenuItem>
+              ))}
+            </>
+          )}
+
+          {/* Remote branches: delete */}
+          {remoteBranches.length > 0 && (
+            <>
+              <ContextMenuSeparator />
+              {remoteBranches.map((branch) => (
+                <ContextMenuItem
+                  key={`delete-remote-${branch.label}`}
+                  onClick={() => handleDeleteRemoteBranch(branch.remoteName!, branch.branchName)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete remote "{branch.label}"
                 </ContextMenuItem>
               ))}
             </>
@@ -234,6 +321,44 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
             </Button>
             <Button onClick={handleCreateBranch} disabled={!branchName.trim() || isCreating}>
               {isCreating ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Branch Dialog */}
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Branch "{renameFrom}"</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Label htmlFor="rename-branch">New Name</Label>
+            <Input
+              id="rename-branch"
+              value={renameTo}
+              onChange={(e) => setRenameTo(e.target.value)}
+              placeholder="new-branch-name"
+              disabled={isRenaming}
+              className="mt-2"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && renameTo.trim() && renameTo !== renameFrom) {
+                  handleRenameBranch();
+                }
+              }}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRenameBranch}
+              disabled={!renameTo.trim() || renameTo === renameFrom || isRenaming}
+            >
+              {isRenaming ? 'Renaming...' : 'Rename'}
             </Button>
           </DialogFooter>
         </DialogContent>

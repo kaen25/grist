@@ -49,6 +49,10 @@ export const tauriGitService: IGitRepository = {
     return invoke('rename_branch', { repoPath, oldName, newName });
   },
 
+  async deleteRemoteBranch(repoPath: string, remote: string, branchName: string): Promise<void> {
+    return invoke('delete_remote_branch', { repoPath, remote, branchName });
+  },
+
   async getCommits(repoPath: string, limit = 100): Promise<Commit[]> {
     return invoke('get_commit_log', { repoPath, count: limit, skip: 0 });
   },

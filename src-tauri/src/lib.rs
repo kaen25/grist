@@ -8,7 +8,7 @@ use commands::{
     get_blob_base64,
     create_commit, get_last_commit_message,
     get_commit_log,
-    get_branches, create_branch, delete_branch, checkout_branch, rename_branch,
+    get_branches, create_branch, delete_branch, checkout_branch, rename_branch, delete_remote_branch,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -41,7 +41,8 @@ pub fn run() {
             create_branch,
             delete_branch,
             checkout_branch,
-            rename_branch
+            rename_branch,
+            delete_remote_branch
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
