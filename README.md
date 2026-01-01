@@ -10,12 +10,12 @@ A modern desktop Git GUI application built with Tauri 2.0, designed as an altern
 - **Diff Viewer**: Unified and side-by-side diff views with syntax highlighting, image preview
 - **Commit**: Create commits with amend support, visual character limit feedback
 - **Commit History**: Virtualized list with infinite scroll, commit details with file diffs
-- **Git Graph**: SVG-based branch visualization with colored connections
+- **Git Graph**: Professional SVG visualization with curved branches, merge diamonds, colored lanes
+- **Branch Management**: Create, checkout, delete branches with tracking info
 - **EOL Detection**: Filter files with only line-ending changes
 - **Resizable Panels**: Customizable layout with draggable splitters
 
 ### Planned
-- Branch Management (create, rename, delete, checkout)
 - Merge & Rebase with conflict resolution
 - Remote Operations (fetch, pull, push)
 - Stash Management

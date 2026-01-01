@@ -70,7 +70,7 @@ export interface IBranchRepository {
 - `src-tauri/src/git/mod.rs` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src-tauri/src/git/branch.rs`:
+- [x] Créer `src-tauri/src/git/branch.rs`:
 ```rust
 use crate::git::error::GitError;
 use crate::git::executor::GitExecutor;
@@ -183,7 +183,7 @@ pub fn checkout_branch(executor: &GitExecutor, name: &str) -> Result<(), GitErro
     Ok(())
 }
 ```
-- [ ] Ajouter `pub mod branch;` dans `src-tauri/src/git/mod.rs`
+- [x] Ajouter `pub mod branch;` dans `src-tauri/src/git/mod.rs`
 
 ---
 
@@ -197,7 +197,7 @@ pub fn checkout_branch(executor: &GitExecutor, name: &str) -> Result<(), GitErro
 - `src-tauri/src/lib.rs` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src-tauri/src/commands/branch.rs`:
+- [x] Créer `src-tauri/src/commands/branch.rs`:
 ```rust
 use crate::git::{branch, executor::GitExecutor, types::Branch};
 
@@ -233,9 +233,9 @@ pub async fn checkout_branch(repo_path: String, name: String) -> Result<(), Stri
     branch::checkout_branch(&executor, &name).map_err(|e| e.to_string())
 }
 ```
-- [ ] Ajouter `pub mod branch;` dans `src-tauri/src/commands/mod.rs`
-- [ ] Ajouter les commandes au `generate_handler![]`
-- [ ] Ajouter dans `src/services/git/index.ts`:
+- [x] Ajouter `pub mod branch;` dans `src-tauri/src/commands/mod.rs`
+- [x] Ajouter les commandes au `generate_handler![]`
+- [x] Ajouter dans `src/infrastructure/services/tauri-git.service.ts`:
 ```typescript
 async getBranches(): Promise<Branch[]> {
   return invoke('get_branches', { repoPath: this.repoPath });
@@ -275,8 +275,8 @@ async checkoutBranch(name: string): Promise<void> {
 - `src/components/branches/index.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/components/branches/`
-- [ ] Créer `src/components/branches/BranchesView.tsx`:
+- [x] Créer le dossier `src/presentation/components/branches/`
+- [x] Créer `src/presentation/components/branches/BranchesView.tsx`:
 ```typescript
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
@@ -340,7 +340,7 @@ export function BranchesView() {
   );
 }
 ```
-- [ ] Créer `src/components/branches/BranchList.tsx`:
+- [x] Créer `src/presentation/components/branches/BranchList.tsx`:
 ```typescript
 import { BranchItem } from './BranchItem';
 import type { Branch } from '@/types/git';
@@ -370,7 +370,7 @@ export function BranchList({ title, branches, onRefresh }: BranchListProps) {
   );
 }
 ```
-- [ ] Créer `src/components/branches/BranchItem.tsx`:
+- [x] Créer `src/presentation/components/branches/BranchItem.tsx`:
 ```typescript
 import { GitBranch, Check, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -471,7 +471,7 @@ export function BranchItem({ branch, onAction }: BranchItemProps) {
   );
 }
 ```
-- [ ] Créer `src/components/branches/index.ts`
+- [x] Créer `src/presentation/components/branches/index.ts`
 
 ---
 
@@ -483,7 +483,7 @@ export function BranchItem({ branch, onAction }: BranchItemProps) {
 - `src/components/branches/CreateBranchDialog.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/branches/CreateBranchDialog.tsx`:
+- [x] Créer `src/presentation/components/branches/CreateBranchDialog.tsx`:
 ```typescript
 import { useState } from 'react';
 import {
@@ -585,7 +585,7 @@ export function CreateBranchDialog({
   );
 }
 ```
-- [ ] Installer le composant label: `pnpm dlx shadcn@latest add label`
+- [x] Installer le composant label: `pnpm dlx shadcn@latest add label`
 
 ---
 
@@ -597,9 +597,9 @@ export function CreateBranchDialog({
 - `src/App.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Mettre à jour `App.tsx`:
+- [x] Mettre à jour `App.tsx`:
 ```typescript
-import { BranchesView } from '@/components/branches';
+import { BranchesView } from '@/presentation/components/branches';
 
 case 'branches':
   return <BranchesView />;
@@ -607,4 +607,4 @@ case 'branches':
 
 ---
 
-## Progression: 0/5
+## Progression: 5/5
