@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -7,7 +7,7 @@ import {
 import { CommitListWithGraph } from './CommitListWithGraph';
 import { CommitDetails } from './CommitDetails';
 import { useUIStore, useRepositoryStore } from '@/application/stores';
-import { useHistory } from '@/application/hooks';
+import { useHistory, useGitService } from '@/application/hooks';
 
 export function HistoryView() {
   // Prevent native context menu from appearing
@@ -21,8 +21,17 @@ export function HistoryView() {
     };
   }, []);
   const { commits, isLoading, hasMore, loadMore, refresh } = useHistory();
+  const { refreshStatus } = useGitService();
   const { selectedCommit, setSelectedCommit } = useUIStore();
   const { currentRepo } = useRepositoryStore();
+
+  // Refresh both history and status when branch changes
+  const handleBranchChange = useCallback(() => {
+    refresh();
+    if (currentRepo) {
+      refreshStatus(currentRepo.path);
+    }
+  }, [refresh, refreshStatus, currentRepo]);
 
   const selected = commits.find((c) => c.hash === selectedCommit) ?? null;
 
@@ -44,7 +53,7 @@ export function HistoryView() {
           onLoadMore={loadMore}
           isLoading={isLoading}
           hasMore={hasMore}
-          onBranchChange={refresh}
+          onBranchChange={handleBranchChange}
         />
       </ResizablePanel>
 
