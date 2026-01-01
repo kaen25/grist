@@ -436,36 +436,45 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
             Create new tag here...
           </ContextMenuItem>
 
-          {/* Delete tag - tags ON THIS COMMIT (contextual like GitExtensions) */}
-          {tagsOnCommit.length === 1 && (
-            <ContextMenuItem
-              onClick={() => handleDeleteTag(tagsOnCommit[0].label)}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete tag...
-            </ContextMenuItem>
-          )}
-          {tagsOnCommit.length > 1 && (
-            <ContextMenuSub>
-              <ContextMenuSubTrigger className="text-destructive focus:text-destructive">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete tag...
-              </ContextMenuSubTrigger>
-              <ContextMenuSubContent className="w-48">
-                {tagsOnCommit.map((tag) => (
-                  <ContextMenuItem
-                    key={`delete-tag-${tag.label}`}
-                    onClick={() => handleDeleteTag(tag.label)}
-                    className="text-destructive focus:text-destructive"
-                    title={tag.label}
-                  >
-                    <span className="truncate">{tag.label}</span>
-                  </ContextMenuItem>
-                ))}
-              </ContextMenuSubContent>
-            </ContextMenuSub>
-          )}
+          {/* Delete tag - tags ON THIS COMMIT (like Delete branch) */}
+          {(() => {
+            if (tagsOnCommit.length === 0) return null;
+
+            // Single tag - direct action
+            if (tagsOnCommit.length === 1) {
+              return (
+                <ContextMenuItem
+                  onClick={() => handleDeleteTag(tagsOnCommit[0].label)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete tag...
+                </ContextMenuItem>
+              );
+            }
+
+            // Multiple tags - submenu
+            return (
+              <ContextMenuSub>
+                <ContextMenuSubTrigger className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete tag...
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent className="w-56 max-h-80 overflow-y-auto">
+                  {tagsOnCommit.map((tag) => (
+                    <ContextMenuItem
+                      key={`delete-tag-${tag.label}`}
+                      onClick={() => handleDeleteTag(tag.label)}
+                      className="text-destructive focus:text-destructive"
+                      title={tag.label}
+                    >
+                      <span className="truncate">{tag.label}</span>
+                    </ContextMenuItem>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+            );
+          })()}
 
           <ContextMenuSeparator />
 
