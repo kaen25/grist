@@ -320,11 +320,15 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
                     <span
                       key={ref}
                       className={cn(
-                        'px-1.5 rounded text-xs font-medium border truncate max-w-[100px] leading-tight',
-                        isTag && 'border-amber-500 text-amber-500',
-                        !isTag && isRemote && 'border-red-500 text-red-500',
-                        !isTag && !isRemote && 'border-green-500 text-green-500',
-                        isHead && 'font-bold'
+                        'px-1.5 rounded text-xs font-medium truncate max-w-[100px] leading-tight',
+                        // Current branch (HEAD): filled green, white text
+                        isHead && 'bg-green-500 text-white font-bold',
+                        // Tags: outline amber
+                        !isHead && isTag && 'border border-amber-500 text-amber-500',
+                        // Remote branches: outline red
+                        !isHead && !isTag && isRemote && 'border border-red-500 text-red-500',
+                        // Local branches (not HEAD): outline green
+                        !isHead && !isTag && !isRemote && 'border border-green-500 text-green-500'
                       )}
                       title={label}
                     >
