@@ -59,6 +59,26 @@ impl GitExecutor {
         &self.repo_path
     }
 
+    /// Execute a git command and return raw bytes (for binary data)
+    pub fn execute_raw(&self, args: &[&str]) -> Result<Vec<u8>, GitError> {
+        let output = Command::new(&self.git_path)
+            .current_dir(&self.repo_path)
+            .args(args)
+            .output()
+            .map_err(|e| GitError::IoError {
+                message: e.to_string(),
+            })?;
+
+        if !output.status.success() {
+            return Err(GitError::CommandFailed {
+                code: output.status.code().unwrap_or(-1),
+                stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        Ok(output.stdout)
+    }
+
     pub fn execute_with_stdin(&self, args: &[&str], stdin_data: &str) -> Result<String, GitError> {
         let mut child = Command::new(&self.git_path)
             .current_dir(&self.repo_path)

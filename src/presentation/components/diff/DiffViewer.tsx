@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { AlignJustify, Columns, Plus, Minus, Settings2, WrapText, Eye } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { AlignJustify, Columns, Plus, Minus, Settings2, WrapText, Eye, Image as ImageIcon } from 'lucide-react';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -17,6 +18,8 @@ import { useUIStore, useRepositoryStore } from '@/application/stores';
 import { useDiffLineSelection } from '@/application/hooks';
 import { tauriGitService } from '@/infrastructure/services';
 import type { FileDiff } from '@/domain/value-objects';
+
+const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico', '.bmp', '.tiff', '.tif'];
 
 interface DiffViewerProps {
   path: string;
@@ -40,6 +43,64 @@ export function DiffViewer({ path, staged = false, untracked = false, onlyEolCha
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const lineSelection = useDiffLineSelection();
+
+  // Check if file is an image
+  const isImage = useMemo(() => {
+    const ext = path.toLowerCase().substring(path.lastIndexOf('.'));
+    return IMAGE_EXTENSIONS.includes(ext);
+  }, [path]);
+
+  // Get image source URL for working tree files
+  const workingTreeImageSrc = useMemo(() => {
+    if (!isImage || !currentRepo || commitHash) return null;
+    // For working tree files, we can display the current version
+    const fullPath = `${currentRepo.path}/${path}`;
+    return convertFileSrc(fullPath);
+  }, [isImage, currentRepo, path, commitHash]);
+
+  // For commit images, load as base64
+  const [commitImageSrc, setCommitImageSrc] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isImage || !currentRepo || !commitHash) {
+      setCommitImageSrc(null);
+      return;
+    }
+
+    async function loadCommitImage() {
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        const base64: string = await invoke('get_blob_base64', {
+          repoPath: currentRepo!.path,
+          commitHash,
+          filePath: path,
+        });
+        // Determine MIME type from extension
+        const ext = path.toLowerCase().substring(path.lastIndexOf('.') + 1);
+        const mimeTypes: Record<string, string> = {
+          png: 'image/png',
+          jpg: 'image/jpeg',
+          jpeg: 'image/jpeg',
+          gif: 'image/gif',
+          svg: 'image/svg+xml',
+          webp: 'image/webp',
+          avif: 'image/avif',
+          ico: 'image/x-icon',
+          bmp: 'image/bmp',
+          tiff: 'image/tiff',
+          tif: 'image/tiff',
+        };
+        const mime = mimeTypes[ext] || 'application/octet-stream';
+        setCommitImageSrc(`data:${mime};base64,${base64}`);
+      } catch (err) {
+        console.error('Failed to load commit image:', err);
+        setCommitImageSrc(null);
+      }
+    }
+
+    loadCommitImage();
+  }, [isImage, currentRepo, commitHash, path]);
+
+  const imageSrc = workingTreeImageSrc || commitImageSrc;
 
   // All hooks must be called before any conditional returns
   const handleStageSelectedLines = useCallback(async () => {
@@ -134,6 +195,35 @@ export function DiffViewer({ path, staged = false, untracked = false, onlyEolCha
     return (
       <div className="p-4 text-destructive">
         Error loading diff: {error}
+      </div>
+    );
+  }
+
+  // Handle binary files (including images)
+  if (diff?.is_binary) {
+    return (
+      <div className="flex h-full flex-col">
+        <DiffHeader diff={diff}>
+          <div />
+        </DiffHeader>
+        <div className="flex-1 flex items-center justify-center p-4">
+          {isImage && imageSrc ? (
+            <div className="text-center space-y-4">
+              <img
+                src={imageSrc}
+                alt={path}
+                className="max-w-full max-h-[60vh] object-contain rounded border"
+              />
+              <p className="text-sm text-muted-foreground">{path}</p>
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground">
+              <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>Binary file</p>
+              <p className="text-sm">{path}</p>
+            </div>
+          )}
+        </div>
       </div>
     );
   }

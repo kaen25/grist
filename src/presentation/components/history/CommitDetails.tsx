@@ -119,46 +119,44 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
       {/* Files changed */}
       <div className="flex-1 min-h-0 flex">
         {/* File list */}
-        <div className="w-56 border-r flex flex-col min-h-0">
-          <div className="px-3 py-2 border-b">
+        <div className="w-56 border-r flex flex-col">
+          <div className="px-3 py-2 border-b flex-shrink-0">
             <h4 className="text-xs font-medium text-muted-foreground">
               Files changed ({files.length})
             </h4>
           </div>
-          <ScrollArea className="flex-1">
-            <div className="p-2">
-              {loading ? (
-                <div className="text-xs text-muted-foreground px-2">Loading...</div>
-              ) : files.length === 0 ? (
-                <div className="text-xs text-muted-foreground px-2">No files changed</div>
-              ) : (
-                files.map((file) => (
-                  <button
-                    key={file.new_path}
-                    onClick={() => setSelectedFile(file.new_path)}
-                    className={cn(
-                      'w-full text-left text-xs p-2 rounded truncate block',
-                      selectedFile === file.new_path
-                        ? 'bg-accent'
-                        : 'hover:bg-accent/50'
-                    )}
-                    title={file.new_path}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-500">+{file.additions}</span>
-                      <span className="text-red-500">-{file.deletions}</span>
+          <div className="flex-1 overflow-y-auto p-2">
+            {loading ? (
+              <div className="text-xs text-muted-foreground px-2">Loading...</div>
+            ) : files.length === 0 ? (
+              <div className="text-xs text-muted-foreground px-2">No files changed</div>
+            ) : (
+              files.map((file) => (
+                <button
+                  key={file.new_path}
+                  onClick={() => setSelectedFile(file.new_path)}
+                  className={cn(
+                    'w-full text-left text-xs p-2 rounded block',
+                    selectedFile === file.new_path
+                      ? 'bg-accent'
+                      : 'hover:bg-accent/50'
+                  )}
+                  title={file.new_path}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">+{file.additions}</span>
+                    <span className="text-red-500">-{file.deletions}</span>
+                  </div>
+                  <div className="truncate">{file.new_path.split('/').pop()}</div>
+                  {file.old_path && file.old_path !== file.new_path && (
+                    <div className="truncate text-muted-foreground">
+                      from: {file.old_path.split('/').pop()}
                     </div>
-                    <div className="truncate">{file.new_path.split('/').pop()}</div>
-                    {file.old_path && file.old_path !== file.new_path && (
-                      <div className="truncate text-muted-foreground">
-                        from: {file.old_path.split('/').pop()}
-                      </div>
-                    )}
-                  </button>
-                ))
-              )}
-            </div>
-          </ScrollArea>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Diff viewer */}
