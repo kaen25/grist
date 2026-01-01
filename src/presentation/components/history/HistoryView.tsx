@@ -3,7 +3,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { CommitList } from './CommitList';
+import { CommitListWithGraph } from './CommitListWithGraph';
 import { CommitDetails } from './CommitDetails';
 import { useUIStore, useRepositoryStore } from '@/application/stores';
 import { useHistory } from '@/application/hooks';
@@ -26,7 +26,7 @@ export function HistoryView() {
   return (
     <ResizablePanelGroup className="h-full">
       <ResizablePanel defaultSize={50} minSize={30}>
-        <CommitList
+        <CommitListWithGraph
           commits={commits}
           selectedHash={selectedCommit}
           onSelect={setSelectedCommit}

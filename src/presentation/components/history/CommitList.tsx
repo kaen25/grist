@@ -10,9 +10,11 @@ interface CommitListProps {
   onLoadMore: () => void;
   isLoading: boolean;
   hasMore: boolean;
+  onVisibleRangeChange?: (range: { start: number; end: number }) => void;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-const ROW_HEIGHT = 64;
+export const ROW_HEIGHT = 64;
 
 export function CommitList({
   commits,
@@ -21,8 +23,11 @@ export function CommitList({
   onLoadMore,
   isLoading,
   hasMore,
+  onVisibleRangeChange,
+  scrollRef,
 }: CommitListProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
+  const internalRef = useRef<HTMLDivElement>(null);
+  const parentRef = scrollRef || internalRef;
 
   const virtualizer = useVirtualizer({
     count: commits.length,
@@ -42,6 +47,16 @@ export function CommitList({
       onLoadMore();
     }
   }, [virtualItems, commits.length, hasMore, isLoading, onLoadMore]);
+
+  // Notify parent of visible range changes
+  useEffect(() => {
+    if (virtualItems.length > 0 && onVisibleRangeChange) {
+      onVisibleRangeChange({
+        start: virtualItems[0].index,
+        end: virtualItems[virtualItems.length - 1].index,
+      });
+    }
+  }, [virtualItems, onVisibleRangeChange]);
 
   if (commits.length === 0 && !isLoading) {
     return (
