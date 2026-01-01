@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AlignJustify, Columns, Plus, Minus } from 'lucide-react';
+import { AlignJustify, Columns, Plus, Minus, Settings2, WrapText, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import { DiffHeader } from './DiffHeader';
 import { UnifiedDiff } from './UnifiedDiff';
 import { SideBySideDiff } from './SideBySideDiff';
@@ -13,11 +21,20 @@ import type { FileDiff } from '@/domain/value-objects';
 interface DiffViewerProps {
   path: string;
   staged?: boolean;
+  untracked?: boolean;
+  onlyEolChanges?: boolean;
   commitHash?: string;
 }
 
-export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps) {
-  const { diffMode, setDiffMode } = useUIStore();
+export function DiffViewer({ path, staged = false, untracked = false, onlyEolChanges = false, commitHash }: DiffViewerProps) {
+  const {
+    diffMode,
+    setDiffMode,
+    diffWordWrap,
+    toggleDiffWordWrap,
+    diffShowWhitespace,
+    toggleDiffShowWhitespace,
+  } = useUIStore();
   const { currentRepo } = useRepositoryStore();
   const [diff, setDiff] = useState<FileDiff | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,8 +101,13 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
           const diffs = await tauriGitService.getCommitDiff(currentRepo.path, commitHash);
           const fileDiff = diffs.find((d) => d.new_path === path);
           setDiff(fileDiff ?? null);
+        } else if (untracked) {
+          const fileDiff = await tauriGitService.getUntrackedFileDiff(currentRepo.path, path);
+          setDiff(fileDiff);
         } else {
-          const fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged);
+          // Don't ignore CR for EOL-only files so we can see the changes
+          const ignoreCr = !onlyEolChanges;
+          const fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged, ignoreCr);
           setDiff(fileDiff);
         }
       } catch (err) {
@@ -96,7 +118,7 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
     }
 
     fetchDiff();
-  }, [path, staged, commitHash, currentRepo]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [path, staged, untracked, onlyEolChanges, commitHash, currentRepo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Conditional returns after all hooks
   if (loading) {
@@ -169,15 +191,50 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
             >
               <Columns className="h-4 w-4" />
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" title="Diff options">
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Display options</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={diffWordWrap}
+                  onCheckedChange={toggleDiffWordWrap}
+                >
+                  <WrapText className="mr-2 h-4 w-4" />
+                  Word wrap
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={diffShowWhitespace}
+                  onCheckedChange={toggleDiffShowWhitespace}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Show whitespace
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </DiffHeader>
 
       <div className="flex-1 overflow-auto font-mono text-sm">
         {diffMode === 'unified' ? (
-          <UnifiedDiff hunks={diff.hunks} lineSelection={lineSelection} />
+          <UnifiedDiff
+            hunks={diff.hunks}
+            lineSelection={lineSelection}
+            wordWrap={diffWordWrap}
+            showWhitespace={diffShowWhitespace}
+          />
         ) : (
-          <SideBySideDiff hunks={diff.hunks} lineSelection={lineSelection} />
+          <SideBySideDiff
+            hunks={diff.hunks}
+            lineSelection={lineSelection}
+            wordWrap={diffWordWrap}
+            showWhitespace={diffShowWhitespace}
+          />
         )}
       </div>
     </div>

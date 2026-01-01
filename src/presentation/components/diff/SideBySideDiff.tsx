@@ -15,6 +15,19 @@ interface LineSelectionProps {
 interface SideBySideDiffProps {
   hunks: DiffHunk[];
   lineSelection?: LineSelectionProps;
+  wordWrap?: boolean;
+  showWhitespace?: boolean;
+}
+
+function renderContent(content: string, showWhitespace: boolean): React.ReactNode {
+  if (!showWhitespace) return content;
+
+  // Replace spaces and tabs with visible characters
+  return content
+    .replace(/ /g, '·')
+    .replace(/\t/g, '→   ')
+    .replace(/\r/g, '␍')
+    .replace(/\n/g, '␊');
 }
 
 interface SideBySideLine {
@@ -30,7 +43,7 @@ interface ProcessedHunk {
   lines: SideBySideLine[];
 }
 
-export function SideBySideDiff({ hunks, lineSelection }: SideBySideDiffProps) {
+export function SideBySideDiff({ hunks, lineSelection, wordWrap = false, showWhitespace = false }: SideBySideDiffProps) {
   const { sideBySideLines, allLines } = useMemo(() => {
     const result: ProcessedHunk[] = [];
     const flatLines: { hunkIndex: number; lineIndex: number }[] = [];
@@ -118,7 +131,9 @@ export function SideBySideDiff({ hunks, lineSelection }: SideBySideDiffProps) {
                         <td className="w-12 select-none border-r px-2 text-right text-xs text-muted-foreground">
                           {line.left?.old_line_number ?? ''}
                         </td>
-                        <td className="whitespace-pre px-2">{line.left?.content ?? ''}</td>
+                        <td className={cn('px-2', wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre')}>
+                          {renderContent(line.left?.content ?? '', showWhitespace)}
+                        </td>
                       </tr>
                     );
                   })}
@@ -148,7 +163,9 @@ export function SideBySideDiff({ hunks, lineSelection }: SideBySideDiffProps) {
                         <td className="w-12 select-none border-r px-2 text-right text-xs text-muted-foreground">
                           {line.right?.new_line_number ?? ''}
                         </td>
-                        <td className="whitespace-pre px-2">{line.right?.content ?? ''}</td>
+                        <td className={cn('px-2', wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre')}>
+                          {renderContent(line.right?.content ?? '', showWhitespace)}
+                        </td>
                       </tr>
                     );
                   })}

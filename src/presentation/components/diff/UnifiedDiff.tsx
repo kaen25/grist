@@ -15,6 +15,19 @@ interface LineSelectionProps {
 interface UnifiedDiffProps {
   hunks: DiffHunk[];
   lineSelection?: LineSelectionProps;
+  wordWrap?: boolean;
+  showWhitespace?: boolean;
+}
+
+function renderContent(content: string, showWhitespace: boolean): React.ReactNode {
+  if (!showWhitespace) return content;
+
+  // Replace spaces and tabs with visible characters
+  return content
+    .replace(/ /g, '·')
+    .replace(/\t/g, '→   ')
+    .replace(/\r/g, '␍')
+    .replace(/\n/g, '␊');
 }
 
 const lineStyles: Record<DiffLineType, string> = {
@@ -24,7 +37,7 @@ const lineStyles: Record<DiffLineType, string> = {
   Header: 'bg-muted text-muted-foreground',
 };
 
-export function UnifiedDiff({ hunks, lineSelection }: UnifiedDiffProps) {
+export function UnifiedDiff({ hunks, lineSelection, wordWrap = false, showWhitespace = false }: UnifiedDiffProps) {
   // Build flat list of all lines for shift+click range selection
   const allLines = useMemo(() => {
     const lines: { hunkIndex: number; lineIndex: number }[] = [];
@@ -81,7 +94,9 @@ export function UnifiedDiff({ hunks, lineSelection }: UnifiedDiffProps) {
                         : ' '}
                     </td>
                     {/* Content */}
-                    <td className="whitespace-pre px-2">{line.content}</td>
+                    <td className={cn('px-2', wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre')}>
+                      {renderContent(line.content, showWhitespace)}
+                    </td>
                   </tr>
                 );
               })}
