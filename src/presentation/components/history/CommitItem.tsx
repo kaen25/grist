@@ -1,11 +1,24 @@
 import { useState } from 'react';
-import { GitBranch, Trash2, Copy, Check, Pencil, Tag } from 'lucide-react';
+import {
+  GitBranch,
+  Trash2,
+  Copy,
+  Check,
+  Pencil,
+  Tag,
+  GitCommitHorizontal,
+  RotateCcw,
+  FileText,
+} from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
 } from '@/components/ui/context-menu';
 import {
   Dialog,
@@ -78,24 +91,25 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Get local branches on this commit
-  const localBranches = commit.refs
+  // Get local branches ON THIS COMMIT (for rename - contextual)
+  const localBranchesOnCommit = commit.refs
     .filter((ref) => {
       const { isTag, isRemote } = formatRef(ref);
       return !isTag && !isRemote;
     })
     .map((ref) => formatRef(ref));
 
-  // Get remote branches on this commit
-  const remoteBranches = commit.refs
+  // Get remote branches ON THIS COMMIT (for delete)
+  // Filter out HEAD refs like "origin/HEAD"
+  const remoteBranchesOnCommit = commit.refs
     .filter((ref) => {
-      const { isTag, isRemote } = formatRef(ref);
-      return !isTag && isRemote;
+      const { isTag, isRemote, branchName } = formatRef(ref);
+      return !isTag && isRemote && branchName !== 'HEAD';
     })
     .map((ref) => formatRef(ref));
 
   // Get tags on this commit
-  const tags = commit.refs
+  const tagsOnCommit = commit.refs
     .filter((ref) => {
       const { isTag } = formatRef(ref);
       return isTag;
@@ -172,6 +186,23 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCopySubject = async () => {
+    await navigator.clipboard.writeText(commit.subject);
+    toast.success('Subject copied to clipboard');
+  };
+
+  const handleCheckoutCommit = async () => {
+    if (!currentRepo) return;
+
+    try {
+      await tauriGitService.checkoutBranch(currentRepo.path, commit.hash);
+      toast.success(`Checked out ${commit.short_hash}`);
+      onBranchChange?.();
+    } catch (error) {
+      toast.error(`Failed to checkout: ${error}`);
+    }
+  };
+
   const handleCreateTag = async () => {
     if (!currentRepo || !tagName.trim()) return;
 
@@ -204,19 +235,6 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
       onBranchChange?.();
     } catch (error) {
       toast.error(`Failed to delete tag: ${error}`);
-    }
-  };
-
-  const handleDeleteRemoteTag = async (name: string) => {
-    if (!currentRepo) return;
-
-    try {
-      // Delete from origin by default
-      await tauriGitService.deleteRemoteTag(currentRepo.path, 'origin', name);
-      toast.success(`Deleted remote tag "${name}"`);
-      onBranchChange?.();
-    } catch (error) {
-      toast.error(`Failed to delete remote tag: ${error}`);
     }
   };
 
@@ -280,94 +298,191 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
           </button>
         </ContextMenuTrigger>
 
-        <ContextMenuContent>
+        <ContextMenuContent className="w-64">
+          {/* Copy to clipboard - like GitExtensions, at the top */}
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy to clipboard
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-48">
+              <ContextMenuItem onClick={handleCopyHash}>
+                {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                Commit hash
+              </ContextMenuItem>
+              <ContextMenuItem onClick={handleCopySubject}>
+                <FileText className="h-4 w-4 mr-2" />
+                Commit subject
+              </ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+
+          <ContextMenuSeparator />
+
+          {/* Branch operations on this commit */}
           <ContextMenuItem onClick={() => setShowCreateDialog(true)}>
             <GitBranch className="h-4 w-4 mr-2" />
-            Create branch here...
+            Create new branch here...
           </ContextMenuItem>
+
+          {/* Rename branch - only branches ON THIS COMMIT (contextual) */}
+          {localBranchesOnCommit.length === 1 && (
+            <ContextMenuItem onClick={() => handleOpenRename(localBranchesOnCommit[0].branchName)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Rename branch...
+            </ContextMenuItem>
+          )}
+          {localBranchesOnCommit.length > 1 && (
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>
+                <Pencil className="h-4 w-4 mr-2" />
+                Rename branch...
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent className="w-48">
+                {localBranchesOnCommit.map((branch) => (
+                  <ContextMenuItem
+                    key={`rename-${branch.branchName}`}
+                    onClick={() => handleOpenRename(branch.branchName)}
+                    title={branch.branchName}
+                  >
+                    <span className="truncate">{branch.branchName}</span>
+                  </ContextMenuItem>
+                ))}
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          )}
+
+          {/* Delete branch - branches ON THIS COMMIT (local + remote) like GitExtensions */}
+          {(() => {
+            const allBranches = [...localBranchesOnCommit, ...remoteBranchesOnCommit];
+            const deletableBranches = allBranches.filter((b) => !b.isHead);
+
+            if (deletableBranches.length === 0) return null;
+
+            // Single deletable branch AND no other branches to show - direct action
+            if (deletableBranches.length === 1 && allBranches.length === 1) {
+              const branch = deletableBranches[0];
+              if (branch.isRemote) {
+                return (
+                  <ContextMenuItem
+                    onClick={() => handleDeleteRemoteBranch(branch.remoteName!, branch.branchName)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete branch...
+                  </ContextMenuItem>
+                );
+              } else {
+                return (
+                  <ContextMenuItem
+                    onClick={() => handleDeleteBranch(branch.branchName)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete branch...
+                  </ContextMenuItem>
+                );
+              }
+            }
+
+            // Multiple branches - submenu (show all, disable HEAD)
+            return (
+              <ContextMenuSub>
+                <ContextMenuSubTrigger className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete branch...
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent className="w-56 max-h-80 overflow-y-auto">
+                  {/* Local branches first */}
+                  {localBranchesOnCommit.map((branch) => (
+                    <ContextMenuItem
+                      key={`delete-${branch.branchName}`}
+                      onClick={() => handleDeleteBranch(branch.branchName)}
+                      className={branch.isHead ? '' : 'text-destructive focus:text-destructive'}
+                      disabled={branch.isHead}
+                      title={branch.branchName}
+                    >
+                      <span className="truncate">
+                        {branch.branchName}
+                        {branch.isHead && ' (current)'}
+                      </span>
+                    </ContextMenuItem>
+                  ))}
+                  {/* Separator if both types exist */}
+                  {localBranchesOnCommit.length > 0 && remoteBranchesOnCommit.length > 0 && (
+                    <ContextMenuSeparator />
+                  )}
+                  {/* Remote branches */}
+                  {remoteBranchesOnCommit.map((branch) => (
+                    <ContextMenuItem
+                      key={`delete-remote-${branch.label}`}
+                      onClick={() => handleDeleteRemoteBranch(branch.remoteName!, branch.branchName)}
+                      className="text-destructive focus:text-destructive"
+                      title={branch.label}
+                    >
+                      <span className="truncate">{branch.label}</span>
+                    </ContextMenuItem>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+            );
+          })()}
+
+          <ContextMenuSeparator />
+
+          {/* Tag operations */}
           <ContextMenuItem onClick={() => setShowCreateTagDialog(true)}>
             <Tag className="h-4 w-4 mr-2" />
-            Create tag here...
+            Create new tag here...
           </ContextMenuItem>
 
-          {/* Local branches: rename and delete */}
-          {localBranches.length > 0 && (
-            <>
-              <ContextMenuSeparator />
-              {localBranches.map((branch) => (
-                <ContextMenuItem
-                  key={`rename-${branch.branchName}`}
-                  onClick={() => handleOpenRename(branch.branchName)}
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Rename "{branch.branchName}"...
-                </ContextMenuItem>
-              ))}
-              {localBranches.map((branch) => (
-                <ContextMenuItem
-                  key={`delete-${branch.branchName}`}
-                  onClick={() => handleDeleteBranch(branch.branchName)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete "{branch.branchName}"
-                </ContextMenuItem>
-              ))}
-            </>
+          {/* Delete tag - tags ON THIS COMMIT (contextual like GitExtensions) */}
+          {tagsOnCommit.length === 1 && (
+            <ContextMenuItem
+              onClick={() => handleDeleteTag(tagsOnCommit[0].label)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete tag...
+            </ContextMenuItem>
           )}
-
-          {/* Remote branches: delete */}
-          {remoteBranches.length > 0 && (
-            <>
-              <ContextMenuSeparator />
-              {remoteBranches.map((branch) => (
-                <ContextMenuItem
-                  key={`delete-remote-${branch.label}`}
-                  onClick={() => handleDeleteRemoteBranch(branch.remoteName!, branch.branchName)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete remote "{branch.label}"
-                </ContextMenuItem>
-              ))}
-            </>
-          )}
-
-          {/* Tags: delete local and remote */}
-          {tags.length > 0 && (
-            <>
-              <ContextMenuSeparator />
-              {tags.map((tag) => (
-                <ContextMenuItem
-                  key={`delete-tag-${tag.label}`}
-                  onClick={() => handleDeleteTag(tag.label)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete tag "{tag.label}"
-                </ContextMenuItem>
-              ))}
-              {tags.map((tag) => (
-                <ContextMenuItem
-                  key={`delete-remote-tag-${tag.label}`}
-                  onClick={() => handleDeleteRemoteTag(tag.label)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete remote tag "{tag.label}"
-                </ContextMenuItem>
-              ))}
-            </>
+          {tagsOnCommit.length > 1 && (
+            <ContextMenuSub>
+              <ContextMenuSubTrigger className="text-destructive focus:text-destructive">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete tag...
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent className="w-48">
+                {tagsOnCommit.map((tag) => (
+                  <ContextMenuItem
+                    key={`delete-tag-${tag.label}`}
+                    onClick={() => handleDeleteTag(tag.label)}
+                    className="text-destructive focus:text-destructive"
+                    title={tag.label}
+                  >
+                    <span className="truncate">{tag.label}</span>
+                  </ContextMenuItem>
+                ))}
+              </ContextMenuSubContent>
+            </ContextMenuSub>
           )}
 
           <ContextMenuSeparator />
-          <ContextMenuItem onClick={handleCopyHash}>
-            {copied ? (
-              <Check className="h-4 w-4 mr-2" />
-            ) : (
-              <Copy className="h-4 w-4 mr-2" />
-            )}
-            Copy commit hash
+
+          {/* Commit operations */}
+          <ContextMenuItem onClick={handleCheckoutCommit}>
+            <GitCommitHorizontal className="h-4 w-4 mr-2" />
+            Checkout this commit...
+          </ContextMenuItem>
+
+          {/* Future operations - disabled for now */}
+          <ContextMenuItem disabled>
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Revert this commit...
+          </ContextMenuItem>
+          <ContextMenuItem disabled>
+            <GitBranch className="h-4 w-4 mr-2" />
+            Cherry pick this commit...
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
