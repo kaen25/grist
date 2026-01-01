@@ -155,7 +155,7 @@ export function StatusView() {
                 </div>
               </ResizablePanel>
 
-              <ResizableHandle className="h-1 bg-border hover:bg-primary/20 transition-colors" />
+              <ResizableHandle withHandle />
 
               {/* Bottom section: Staged files */}
               <ResizablePanel defaultSize={40} minSize={20}>
