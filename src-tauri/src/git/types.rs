@@ -28,6 +28,9 @@ pub struct StatusEntry {
     pub index_status: FileStatus,
     pub worktree_status: FileStatus,
     pub original_path: Option<String>,
+    /// True if the only changes are line ending differences (CRLF/LF)
+    #[serde(default)]
+    pub only_eol_changes: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
