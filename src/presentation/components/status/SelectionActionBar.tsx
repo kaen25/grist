@@ -31,12 +31,14 @@ export function SelectionActionBar() {
     for (const path of unstagedSelected) {
       await stageFile(path);
     }
+    clearSelection();
   };
 
   const handleUnstageSelected = async () => {
     for (const path of stagedSelected) {
       await unstageFile(path);
     }
+    clearSelection();
   };
 
   return (

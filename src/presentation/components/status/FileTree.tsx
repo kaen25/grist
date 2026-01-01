@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Plus, Minus } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -18,7 +18,7 @@ interface FileTreeProps {
 export function FileTree({ title, files, type, onDiscardRequest }: FileTreeProps) {
   const [isOpen, setIsOpen] = useState(true);
   const { stageAll, unstageAll, stageFile, unstageFile } = useStagingActions();
-  const { selectedFiles } = useUIStore();
+  const { selectedFiles, clearSelection } = useUIStore();
 
   const allFilePaths = useMemo(() => files.map((f) => f.path), [files]);
 
@@ -40,19 +40,21 @@ export function FileTree({ title, files, type, onDiscardRequest }: FileTreeProps
     await unstageAll();
   };
 
-  const handleStageSelected = async (e: React.MouseEvent) => {
+  const handleStageSelected = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     for (const path of selectedInTree) {
       await stageFile(path);
     }
-  };
+    clearSelection();
+  }, [selectedInTree, stageFile, clearSelection]);
 
-  const handleUnstageSelected = async (e: React.MouseEvent) => {
+  const handleUnstageSelected = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     for (const path of selectedInTree) {
       await unstageFile(path);
     }
-  };
+    clearSelection();
+  }, [selectedInTree, unstageFile, clearSelection]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
