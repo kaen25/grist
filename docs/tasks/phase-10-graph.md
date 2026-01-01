@@ -54,7 +54,7 @@ export const GraphColorProvider = {
 - `src/components/history/graphLayout.ts`
 
 **Actions**:
-- [ ] Créer `src/components/history/graphLayout.ts`:
+- [x] Créer `src/presentation/components/history/graphLayout.ts`:
 ```typescript
 import type { Commit } from '@/types/git';
 
@@ -183,7 +183,7 @@ export function calculateGraphLayout(commits: Commit[]): GraphLayout {
 - `src/components/history/CommitGraph.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/history/CommitGraph.tsx`:
+- [x] Créer `src/presentation/components/history/CommitGraph.tsx`:
 ```typescript
 import { useMemo } from 'react';
 import { calculateGraphLayout, getColumnColor, type GraphNode } from './graphLayout';
@@ -370,7 +370,7 @@ function GraphNode({
 - `src/components/history/CommitGraph.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Ajouter hover state au GraphNode:
+- [x] Ajouter hover state au GraphNode:
 ```typescript
 // Dans GraphNode component, ajouter:
 const [isHovered, setIsHovered] = useState(false);
@@ -384,7 +384,7 @@ onMouseLeave={() => setIsHovered(false)}
   <title>{node.commit.short_hash}: {node.commit.subject}</title>
 )}
 ```
-- [ ] Ajouter style visuel au hover (agrandir cercle)
+- [x] Ajouter style visuel au hover (agrandir cercle)
 
 ---
 
@@ -397,7 +397,7 @@ onMouseLeave={() => setIsHovered(false)}
 - `src/components/history/CommitList.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Mettre à jour `CommitList.tsx` pour exposer le scroll et visible range:
+- [x] Mettre à jour `CommitList.tsx` pour exposer le scroll et visible range:
 ```typescript
 // Ajouter props:
 interface CommitListProps {
@@ -417,7 +417,7 @@ useEffect(() => {
   }
 }, [visibleItems, onVisibleRangeChange]);
 ```
-- [ ] Mettre à jour `HistoryView.tsx` pour inclure le graph:
+- [x] Mettre à jour `HistoryView.tsx` pour inclure le graph:
 ```typescript
 import { CommitGraph } from './CommitGraph';
 
@@ -449,8 +449,8 @@ const ROW_HEIGHT = 60;
   </div>
 </ResizablePanel>
 ```
-- [ ] Synchroniser le scroll entre graph et liste
+- [x] Synchroniser le scroll entre graph et liste (via CommitListWithGraph)
 
 ---
 
-## Progression: 0/4
+## Progression: 4/4
