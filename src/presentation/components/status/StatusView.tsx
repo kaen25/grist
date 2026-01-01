@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
@@ -98,84 +97,94 @@ export function StatusView() {
       <ResizablePanelGroup className="h-full">
         {/* Left panel: File lists */}
         <ResizablePanel defaultSize={30} minSize={20}>
-          <div className="flex flex-col h-full overflow-hidden">
+          <ResizablePanelGroup direction="vertical">
             {/* Top section: Unstaged files */}
-            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-              {/* EOL filter toggle */}
-              <div className="flex items-center justify-between px-3 py-1.5 flex-shrink-0">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Working Tree
-                </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={hideEolOnlyFiles ? 'secondary' : 'ghost'}
-                      size="sm"
-                      className="h-6 gap-1 px-1.5"
-                      onClick={toggleHideEolOnlyFiles}
-                    >
-                      <FileCode className="h-3 w-3" />
-                      {hideEolOnlyFiles ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                      {hiddenEolCount > 0 && (
-                        <span className="text-xs text-muted-foreground">({hiddenEolCount})</span>
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {hideEolOnlyFiles
-                      ? `Show ${hiddenEolCount} file(s) with only line ending changes`
-                      : 'Hide files with only line ending changes'}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <ScrollArea className="flex-1 min-h-0">
-                <div className="px-2 pb-2 space-y-1">
-                  <FileTree
-                    title="Changes"
-                    files={filteredUnstaged}
-                    type="unstaged"
-                    onDiscardRequest={handleDiscardRequest}
-                  />
-                  <FileTree
-                    title="Untracked"
-                    files={status?.untracked ?? []}
-                    type="untracked"
-                    onDiscardRequest={handleDiscardRequest}
-                  />
-                  {status?.conflicted && status.conflicted.length > 0 && (
-                    <FileTree
-                      title="Conflicts"
-                      files={status.conflicted}
-                      type="conflicted"
-                    />
-                  )}
+            <ResizablePanel defaultSize={50} minSize={10}>
+              <div className="flex flex-col h-full overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-1.5 flex-shrink-0">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Working Tree
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={hideEolOnlyFiles ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="h-6 gap-1 px-1.5"
+                        onClick={toggleHideEolOnlyFiles}
+                      >
+                        <FileCode className="h-3 w-3" />
+                        {hideEolOnlyFiles ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                        {hiddenEolCount > 0 && (
+                          <span className="text-xs text-muted-foreground">({hiddenEolCount})</span>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {hideEolOnlyFiles
+                        ? `Show ${hiddenEolCount} file(s) with only line ending changes`
+                        : 'Hide files with only line ending changes'}
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
-              </ScrollArea>
-            </div>
+                <ScrollArea className="flex-1 min-h-0">
+                  <div className="px-2 pb-2 space-y-1">
+                    <FileTree
+                      title="Changes"
+                      files={filteredUnstaged}
+                      type="unstaged"
+                      onDiscardRequest={handleDiscardRequest}
+                    />
+                    <FileTree
+                      title="Untracked"
+                      files={status?.untracked ?? []}
+                      type="untracked"
+                      onDiscardRequest={handleDiscardRequest}
+                    />
+                    {status?.conflicted && status.conflicted.length > 0 && (
+                      <FileTree
+                        title="Conflicts"
+                        files={status.conflicted}
+                        type="conflicted"
+                      />
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            </ResizablePanel>
 
-            <Separator />
+            <ResizableHandle />
 
             {/* Middle section: Staged files */}
-            <div className="flex-1 min-h-[100px] flex flex-col overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-1.5 flex-shrink-0">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Staged
-                </span>
-              </div>
-              <ScrollArea className="flex-1 min-h-0">
-                <div className="px-2 pb-2">
-                  <FileTree
-                    title="Staged Changes"
-                    files={filteredStaged}
-                    type="staged"
-                  />
+            <ResizablePanel defaultSize={30} minSize={10}>
+              <div className="flex flex-col h-full overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-1.5 flex-shrink-0">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Staged
+                  </span>
                 </div>
-              </ScrollArea>
-            </div>
+                <ScrollArea className="flex-1 min-h-0">
+                  <div className="px-2 pb-2">
+                    <FileTree
+                      title="Staged Changes"
+                      files={filteredStaged}
+                      type="staged"
+                    />
+                  </div>
+                </ScrollArea>
+              </div>
+            </ResizablePanel>
 
-            <SelectionActionBar />
-            <CommitPanel />
-          </div>
+            <ResizableHandle />
+
+            {/* Bottom section: Commit */}
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+              <div className="flex flex-col h-full overflow-hidden">
+                <SelectionActionBar />
+                <CommitPanel />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </ResizablePanel>
 
         <ResizableHandle withHandle />
