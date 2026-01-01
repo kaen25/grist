@@ -253,6 +253,18 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
     }
   };
 
+  const handleCheckoutBranch = async (name: string) => {
+    if (!currentRepo) return;
+
+    try {
+      await tauriGitService.checkoutBranch(currentRepo.path, name);
+      toast.success(`Switched to branch "${name}"`);
+      onBranchChange?.();
+    } catch (error) {
+      toast.error(`Failed to checkout branch: ${error}`);
+    }
+  };
+
   const handleCreateTag = async () => {
     if (!currentRepo || !tagName.trim()) return;
 
@@ -368,6 +380,63 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
           </ContextMenuSub>
 
           <ContextMenuSeparator />
+
+          {/* Checkout branch - branches ON THIS COMMIT (excluding current HEAD) */}
+          {(() => {
+            const allBranches = [...localBranchesOnCommit, ...remoteBranchesOnCommit];
+            const checkoutableBranches = allBranches.filter((b) => !b.isHead);
+
+            if (checkoutableBranches.length === 0) return null;
+
+            // Single branch - direct action
+            if (checkoutableBranches.length === 1) {
+              const branch = checkoutableBranches[0];
+              const displayName = branch.isRemote ? branch.label : branch.branchName;
+              return (
+                <ContextMenuItem onClick={() => handleCheckoutBranch(displayName)}>
+                  <Check className="h-4 w-4 mr-2" />
+                  Checkout branch...
+                </ContextMenuItem>
+              );
+            }
+
+            // Multiple branches - submenu
+            return (
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>
+                  <Check className="h-4 w-4 mr-2" />
+                  Checkout branch...
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent className="w-56 max-h-80 overflow-y-auto">
+                  {/* Local branches first */}
+                  {localBranchesOnCommit
+                    .filter((b) => !b.isHead)
+                    .map((branch) => (
+                      <ContextMenuItem
+                        key={`checkout-${branch.branchName}`}
+                        onClick={() => handleCheckoutBranch(branch.branchName)}
+                        title={branch.branchName}
+                      >
+                        <span className="truncate">{branch.branchName}</span>
+                      </ContextMenuItem>
+                    ))}
+                  {/* Separator if both types exist */}
+                  {localBranchesOnCommit.filter((b) => !b.isHead).length > 0 &&
+                    remoteBranchesOnCommit.length > 0 && <ContextMenuSeparator />}
+                  {/* Remote branches */}
+                  {remoteBranchesOnCommit.map((branch) => (
+                    <ContextMenuItem
+                      key={`checkout-remote-${branch.label}`}
+                      onClick={() => handleCheckoutBranch(branch.label)}
+                      title={branch.label}
+                    >
+                      <span className="truncate">{branch.label}</span>
+                    </ContextMenuItem>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+            );
+          })()}
 
           {/* Branch operations on this commit */}
           <ContextMenuItem onClick={() => setShowCreateDialog(true)}>
