@@ -139,20 +139,21 @@ export function calculateGraphLayout(commits: Commit[]): GraphLayout {
 
       if (firstParentRow !== undefined) {
         let parentCol: number;
-        let edgeColor: string;
 
         // Check if parent already has a column assigned (by another child)
         if (commitColumn.has(firstParentHash)) {
           // Parent already assigned - edge goes to that column
           parentCol = commitColumn.get(firstParentHash)!;
-          edgeColor = commitColor.get(firstParentHash)!;
         } else {
           // First child to claim this parent - use same column
           parentCol = column;
-          edgeColor = nodeColor;
           commitColumn.set(firstParentHash, parentCol);
-          commitColor.set(firstParentHash, edgeColor);
+          commitColor.set(firstParentHash, nodeColor);
         }
+
+        // Edge color is always the child's (current node's) color
+        // This ensures branch deviations use the new branch's color
+        const edgeColor = nodeColor;
 
         // Add edge interval
         edgeIntervals.push({
