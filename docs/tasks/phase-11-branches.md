@@ -671,6 +671,7 @@ case 'branches':
 - [x] Restructurer le context menu style GitExtensions avec sous-menus
 - [x] Ajouter sous-menu "Copy to clipboard" (hash, subject)
 - [x] Ajouter "Checkout this commit"
+- [x] Ajouter "Checkout branch" pour switch sur les branches du commit
 - [x] Filtrer les branches par commit (contextuel)
 - [x] Masquer HEAD dans le menu delete branch
 - [x] Filtrer origin/HEAD
