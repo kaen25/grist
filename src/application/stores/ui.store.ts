@@ -12,6 +12,9 @@ interface UIState {
   sidebarCollapsed: boolean;
   diffMode: DiffMode;
   diffContext: number;
+  diffWordWrap: boolean;
+  diffShowWhitespace: boolean;
+  hideEolOnlyFiles: boolean;
 
   setCurrentView: (view: ViewType) => void;
   setSelectedFiles: (files: string[]) => void;
@@ -21,6 +24,9 @@ interface UIState {
   toggleSidebar: () => void;
   setDiffMode: (mode: DiffMode) => void;
   setDiffContext: (lines: number) => void;
+  toggleDiffWordWrap: () => void;
+  toggleDiffShowWhitespace: () => void;
+  toggleHideEolOnlyFiles: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -33,6 +39,9 @@ export const useUIStore = create<UIState>()(
       sidebarCollapsed: false,
       diffMode: 'unified',
       diffContext: 3,
+      diffWordWrap: false,
+      diffShowWhitespace: false,
+      hideEolOnlyFiles: true,
 
       setCurrentView: (currentView) => set({ currentView, selectedFiles: [], lastSelectedFile: null, selectedCommit: null }),
       setSelectedFiles: (selectedFiles) => set((state) => ({
@@ -66,12 +75,18 @@ export const useUIStore = create<UIState>()(
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setDiffMode: (diffMode) => set({ diffMode }),
       setDiffContext: (diffContext) => set({ diffContext }),
+      toggleDiffWordWrap: () => set((s) => ({ diffWordWrap: !s.diffWordWrap })),
+      toggleDiffShowWhitespace: () => set((s) => ({ diffShowWhitespace: !s.diffShowWhitespace })),
+      toggleHideEolOnlyFiles: () => set((s) => ({ hideEolOnlyFiles: !s.hideEolOnlyFiles })),
     }),
     {
       name: 'grist-ui',
       partialize: (state) => ({
         diffMode: state.diffMode,
         diffContext: state.diffContext,
+        diffWordWrap: state.diffWordWrap,
+        diffShowWhitespace: state.diffShowWhitespace,
+        hideEolOnlyFiles: state.hideEolOnlyFiles,
       }),
     }
   )

@@ -106,11 +106,26 @@ export function FileItem({ entry, type, allFilePaths, onDiscardRequest }: FileIt
             {label}
           </span>
           <Icon className={cn('h-4 w-4 flex-shrink-0', color)} />
-          <span className="truncate flex-1 text-left">
-            {fileName}
-            {dirPath && (
-              <span className="text-muted-foreground ml-1 text-xs">
-                {dirPath}
+          <span className={cn('truncate flex-1 text-left', entry.only_eol_changes && 'opacity-50')}>
+            {entry.original_path ? (
+              <>
+                <span className="text-muted-foreground">{entry.original_path}</span>
+                <span className="mx-1">→</span>
+                {entry.path}
+              </>
+            ) : (
+              <>
+                {fileName}
+                {dirPath && (
+                  <span className="text-muted-foreground ml-1 text-xs">
+                    {dirPath}
+                  </span>
+                )}
+              </>
+            )}
+            {entry.only_eol_changes && (
+              <span className="ml-2 text-xs text-muted-foreground italic" title="Only line ending changes (CRLF/LF)">
+                (EOL)
               </span>
             )}
           </span>
