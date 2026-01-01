@@ -28,17 +28,15 @@ export function FileTree({ title, files, type, onDiscardRequest }: FileTreeProps
     [selectedFiles, allFilePaths]
   );
 
-  if (files.length === 0) return null;
-
-  const handleStageAll = async (e: React.MouseEvent) => {
+  const handleStageAll = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     await stageAll();
-  };
+  }, [stageAll]);
 
-  const handleUnstageAll = async (e: React.MouseEvent) => {
+  const handleUnstageAll = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     await unstageAll();
-  };
+  }, [unstageAll]);
 
   const handleStageSelected = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -55,6 +53,8 @@ export function FileTree({ title, files, type, onDiscardRequest }: FileTreeProps
     }
     clearSelection();
   }, [selectedInTree, unstageFile, clearSelection]);
+
+  if (files.length === 0) return null;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
