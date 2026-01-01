@@ -33,6 +33,22 @@ export const tauriGitService: IGitRepository = {
     return invoke('get_branches', { repoPath });
   },
 
+  async createBranch(repoPath: string, name: string, startPoint?: string): Promise<void> {
+    return invoke('create_branch', { repoPath, name, startPoint });
+  },
+
+  async deleteBranch(repoPath: string, name: string, force = false): Promise<void> {
+    return invoke('delete_branch', { repoPath, name, force });
+  },
+
+  async checkoutBranch(repoPath: string, name: string): Promise<void> {
+    return invoke('checkout_branch', { repoPath, name });
+  },
+
+  async renameBranch(repoPath: string, oldName: string, newName: string): Promise<void> {
+    return invoke('rename_branch', { repoPath, oldName, newName });
+  },
+
   async getCommits(repoPath: string, limit = 100): Promise<Commit[]> {
     return invoke('get_commit_log', { repoPath, count: limit, skip: 0 });
   },

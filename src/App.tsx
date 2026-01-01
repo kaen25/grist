@@ -1,21 +1,9 @@
 import { AppLayout } from '@/presentation/components/layout';
 import { StatusView } from '@/presentation/components/status';
 import { HistoryView } from '@/presentation/components/history';
+import { BranchesView } from '@/presentation/components/branches';
 import { useUIStore } from '@/application/stores';
 import { Toaster } from '@/components/ui/sonner';
-
-// Placeholder views - will be implemented in later phases
-
-function BranchesView() {
-  return (
-    <div className="flex h-full items-center justify-center text-muted-foreground">
-      <div className="text-center">
-        <h2 className="text-lg font-medium">Branches</h2>
-        <p className="text-sm">Branch management will appear here</p>
-      </div>
-    </div>
-  );
-}
 
 function StashView() {
   return (

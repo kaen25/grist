@@ -13,6 +13,10 @@ export interface IGitRepository {
 
   // Branches
   getBranches(repoPath: string): Promise<Branch[]>;
+  createBranch(repoPath: string, name: string, startPoint?: string): Promise<void>;
+  deleteBranch(repoPath: string, name: string, force?: boolean): Promise<void>;
+  checkoutBranch(repoPath: string, name: string): Promise<void>;
+  renameBranch(repoPath: string, oldName: string, newName: string): Promise<void>;
 
   // Commits
   getCommits(repoPath: string, limit?: number): Promise<Commit[]>;
