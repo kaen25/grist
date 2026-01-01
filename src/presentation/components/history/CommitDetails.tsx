@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { DiffViewer } from '../diff';
-import { GravatarAvatar } from '../common';
+import { GravatarAvatar, CommitHashLink } from '../common';
 import { useRepositoryStore } from '@/application/stores';
 import { tauriGitService } from '@/infrastructure/services';
 import { cn } from '@/lib/utils';
@@ -18,11 +18,18 @@ interface CommitDetailsProps {
 }
 
 export function CommitDetails({ commit }: CommitDetailsProps) {
-  const { currentRepo } = useRepositoryStore();
+  const { currentRepo, commits } = useRepositoryStore();
   const [copied, setCopied] = useState(false);
   const [files, setFiles] = useState<FileDiff[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Compute children (commits that have this commit as a parent)
+  const childHashes = useMemo(() => {
+    return commits
+      .filter((c) => c.parent_hashes.includes(commit.hash))
+      .map((c) => c.hash);
+  }, [commits, commit.hash]);
 
   useEffect(() => {
     async function loadDiff() {
@@ -108,12 +115,21 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
                   </span>
                   <div className="flex flex-wrap gap-1">
                     {commit.parent_hashes.map((hash) => (
-                      <code
-                        key={hash}
-                        className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded"
-                      >
-                        {hash.substring(0, 8)}
-                      </code>
+                      <CommitHashLink key={hash} hash={hash} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Children */}
+              {childHashes.length > 0 && (
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-20 flex-shrink-0">
+                    {childHashes.length > 1 ? 'Children' : 'Child'}
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {childHashes.map((hash) => (
+                      <CommitHashLink key={hash} hash={hash} />
                     ))}
                   </div>
                 </div>
