@@ -11,6 +11,7 @@ pub fn get_commit_log(
 ) -> Result<Vec<Commit>, GitError> {
     let output = executor.execute_checked(&[
         "log",
+        "--decorate=full",
         &format!("--format={}", LOG_FORMAT),
         "-n",
         &count.to_string(),
