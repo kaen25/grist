@@ -10,10 +10,13 @@ A modern desktop Git GUI application built with Tauri 2.0, designed as an altern
 - **Diff Viewer**: Unified and side-by-side diff views with syntax highlighting, image preview
 - **Commit**: Create commits with amend support, visual character limit feedback
 - **Commit History**: Virtualized list with infinite scroll, commit details with file diffs
-- **Git Graph**: Professional SVG visualization with curved branches, merge diamonds, colored lanes
-- **Branch Management**: Create, checkout, delete branches with tracking info
+- **Git Graph**: Professional SVG visualization with 90° rounded angles, colored lanes, merge diamonds
+- **Branch Management**: Create, checkout, rename, delete (local/remote) branches via context menu
+- **Branch Switching**: Quick branch checkout via toolbar dropdown with ahead/behind indicators
+- **Tag Management**: Create and delete tags (local/remote) via commit context menu
 - **EOL Detection**: Filter files with only line-ending changes
 - **Resizable Panels**: Customizable layout with draggable splitters
+- **Theme Support**: Light, dark, and system themes
 
 ### Planned
 - Merge & Rebase with conflict resolution
@@ -21,7 +24,6 @@ A modern desktop Git GUI application built with Tauri 2.0, designed as an altern
 - Stash Management
 - Cherry-pick & Revert
 - Command Palette and keyboard shortcuts
-- Theme support (light, dark, system)
 
 ## Tech Stack
 

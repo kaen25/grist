@@ -607,4 +607,57 @@ case 'branches':
 
 ---
 
-## Progression: 5/5
+## Tâche 11.6: Branch context menu (commit history)
+
+**Commit**: `feat: add context menu to commit list for branch operations`
+
+**Fichiers**:
+- `src/presentation/components/history/CommitItem.tsx`
+- `src-tauri/src/git/branch.rs`
+- `src-tauri/src/commands/branch.rs`
+
+**Actions**:
+- [x] Ajouter menu contextuel sur les commits dans l'historique
+- [x] Implémenter "Create branch here"
+- [x] Implémenter "Checkout branch" pour les branches référencées
+- [x] Implémenter "Delete branch" pour les branches locales
+- [x] Implémenter "Rename branch" pour les branches locales
+- [x] Implémenter "Delete remote branch" pour les branches distantes
+
+---
+
+## Tâche 11.7: Tag management
+
+**Commit**: `feat: add tag management to commit context menu`
+
+**Fichiers**:
+- `src-tauri/src/git/tag.rs`
+- `src-tauri/src/commands/tag.rs`
+- `src/infrastructure/services/tauri-git.service.ts`
+- `src/presentation/components/history/CommitItem.tsx`
+
+**Actions**:
+- [x] Créer module tag en Rust (get_tags, create_tag, delete_tag, delete_remote_tag)
+- [x] Ajouter commandes Tauri pour les tags
+- [x] Ajouter au service frontend
+- [x] Intégrer dans le menu contextuel des commits
+
+---
+
+## Tâche 11.8: Branch switching dropdown
+
+**Commit**: `feat: add branch switching dropdown in toolbar`
+
+**Fichiers**:
+- `src/presentation/components/layout/Toolbar.tsx`
+- `src/presentation/components/layout/Sidebar.tsx`
+
+**Actions**:
+- [x] Transformer l'affichage statique de la branche en menu déroulant
+- [x] Afficher toutes les branches locales avec indicateurs ahead/behind
+- [x] Permettre le checkout en cliquant sur une branche
+- [x] Supprimer l'onglet "Branches" de la sidebar (redondant)
+
+---
+
+## Progression: 8/8
