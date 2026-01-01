@@ -136,23 +136,14 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
                   key={file.new_path}
                   onClick={() => setSelectedFile(file.new_path)}
                   className={cn(
-                    'w-full text-left text-xs p-2 rounded block',
+                    'w-full text-left text-xs px-2 py-1 rounded truncate',
                     selectedFile === file.new_path
                       ? 'bg-accent'
                       : 'hover:bg-accent/50'
                   )}
                   title={file.new_path}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500">+{file.additions}</span>
-                    <span className="text-red-500">-{file.deletions}</span>
-                  </div>
-                  <div className="truncate">{file.new_path.split('/').pop()}</div>
-                  {file.old_path && file.old_path !== file.new_path && (
-                    <div className="truncate text-muted-foreground">
-                      from: {file.old_path.split('/').pop()}
-                    </div>
-                  )}
+                  {file.new_path.split('/').pop()}
                 </button>
               ))
             )}

@@ -18,12 +18,12 @@ interface CommitListWithGraphProps {
 // Constants
 // =============================================================================
 
-const ROW_HEIGHT = 56;
-const COLUMN_WIDTH = 24;
-const NODE_RADIUS = 5;
-const NODE_RADIUS_MERGE = 6;
-const GRAPH_PADDING = 16;
-const LINE_WIDTH = 2;
+const ROW_HEIGHT = 32;
+const COLUMN_WIDTH = 18;
+const NODE_RADIUS = 4;
+const NODE_RADIUS_MERGE = 5;
+const GRAPH_PADDING = 10;
+const LINE_WIDTH = 1.5;
 
 // =============================================================================
 // SVG Path Helpers
@@ -233,46 +233,6 @@ export function CommitListWithGraph({
             })}
           </g>
 
-          {/* Branch labels for tips with refs */}
-          <g className="labels">
-            {virtualItems.map((virtualRow) => {
-              const node = nodeByRow.get(virtualRow.index);
-              if (!node || !node.commit.refs || node.commit.refs.length === 0) return null;
-
-              const { x, y } = getNodeCenter(node.row, node.column);
-              const label = node.commit.refs[0]
-                .replace('HEAD -> ', '')
-                .replace('origin/', '')
-                .replace('refs/heads/', '')
-                .replace('refs/tags/', '');
-
-              return (
-                <g key={`label-${node.commit.hash}`} className="graph-label">
-                  {/* Label background */}
-                  <rect
-                    x={x + NODE_RADIUS + 6}
-                    y={y - 8}
-                    width={label.length * 6 + 8}
-                    height={16}
-                    rx={3}
-                    fill={node.color}
-                    opacity={0.9}
-                  />
-                  {/* Label text */}
-                  <text
-                    x={x + NODE_RADIUS + 10}
-                    y={y + 4}
-                    fontSize={10}
-                    fontFamily="monospace"
-                    fill="white"
-                    fontWeight="500"
-                  >
-                    {label}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
         </svg>
 
         {/* Commit items */}

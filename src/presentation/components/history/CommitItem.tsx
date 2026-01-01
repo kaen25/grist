@@ -1,5 +1,3 @@
-import { formatDistanceToNow } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Commit } from '@/domain/entities';
 
@@ -9,44 +7,90 @@ interface CommitItemProps {
   onSelect: () => void;
 }
 
-export function CommitItem({ commit, isSelected, onSelect }: CommitItemProps) {
-  const timeAgo = formatDistanceToNow(new Date(commit.date), { addSuffix: true });
+function formatRef(ref: string): {
+  label: string;
+  isHead: boolean;
+  isTag: boolean;
+  isRemote: boolean;
+} {
+  const isHead = ref.startsWith('HEAD -> ');
+  const isTag = ref.startsWith('tag: ') || ref.includes('refs/tags/');
+  const isRemote = ref.includes('origin/') || ref.includes('refs/remotes/');
+  let label = ref
+    .replace('HEAD -> ', '')
+    .replace('tag: ', '')
+    .replace('refs/heads/', '')
+    .replace('refs/tags/', '')
+    .replace('refs/remotes/', '');
+  return { label, isHead, isTag, isRemote };
+}
 
+// Simple avatar with initials
+function AuthorAvatar({ name }: { name: string }) {
+  const initials = name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground flex-shrink-0">
+      {initials}
+    </div>
+  );
+}
+
+export function CommitItem({ commit, isSelected, onSelect }: CommitItemProps) {
   return (
     <button
       onClick={onSelect}
       className={cn(
-        'w-full h-full text-left px-3 py-2 border-b hover:bg-accent/50 transition-colors',
+        'w-full h-full text-left pl-2 pr-4 flex items-center gap-2 border-b hover:bg-accent/50 transition-colors',
         isSelected && 'bg-accent'
       )}
     >
-      <div className="flex items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-mono text-xs text-muted-foreground">
-              {commit.short_hash}
-            </span>
-            {commit.refs.length > 0 && (
-              <div className="flex gap-1 flex-wrap">
-                {commit.refs.slice(0, 2).map((ref) => (
-                  <Badge key={ref} variant="secondary" className="text-xs py-0">
-                    {ref.replace('HEAD -> ', '')}
-                  </Badge>
-                ))}
-                {commit.refs.length > 2 && (
-                  <Badge variant="outline" className="text-xs py-0">
-                    +{commit.refs.length - 2}
-                  </Badge>
+      {/* Branch/Tag badges - outline style */}
+      {commit.refs.length > 0 && (
+        <div className="flex gap-1 flex-shrink-0">
+          {commit.refs.slice(0, 3).map((ref) => {
+            const { label, isHead, isTag, isRemote } = formatRef(ref);
+            return (
+              <span
+                key={ref}
+                className={cn(
+                  'px-1.5 rounded text-xs font-medium border truncate max-w-[100px] leading-tight',
+                  isTag && 'border-amber-500 text-amber-500',
+                  !isTag && isRemote && 'border-red-500 text-red-500',
+                  !isTag && !isRemote && 'border-green-500 text-green-500',
+                  isHead && 'font-bold'
                 )}
-              </div>
-            )}
-          </div>
-          <div className="font-medium truncate text-sm">{commit.subject}</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {commit.author_name} &bull; {timeAgo}
-          </div>
+                title={label}
+              >
+                {label}
+              </span>
+            );
+          })}
+          {commit.refs.length > 3 && (
+            <span className="px-1.5 rounded text-xs border border-muted-foreground text-muted-foreground leading-tight">
+              +{commit.refs.length - 3}
+            </span>
+          )}
         </div>
+      )}
+
+      {/* Commit message */}
+      <div className="flex-1 min-w-0 truncate text-sm">
+        {commit.subject}
       </div>
+
+      {/* Author avatar */}
+      <AuthorAvatar name={commit.author_name} />
+
+      {/* Short hash */}
+      <span className="font-mono text-xs text-muted-foreground flex-shrink-0">
+        {commit.short_hash}
+      </span>
     </button>
   );
 }
