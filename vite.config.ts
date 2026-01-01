@@ -14,6 +14,35 @@ export default defineConfig(async () => ({
     },
   },
 
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core
+          'react-vendor': ['react', 'react-dom'],
+          // UI libraries (Radix, etc.)
+          'ui-vendor': [
+            '@radix-ui/react-context-menu',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-select',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-tooltip',
+            'class-variance-authority',
+            'clsx',
+            'tailwind-merge',
+          ],
+          // Icons (large)
+          'icons': ['lucide-react'],
+          // Tauri
+          'tauri': ['@tauri-apps/api', '@tauri-apps/plugin-dialog'],
+        },
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors
