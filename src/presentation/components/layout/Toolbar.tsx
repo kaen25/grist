@@ -1,4 +1,15 @@
-import { RefreshCw, ArrowDown, ArrowUp, Sun, Moon, Monitor } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  RefreshCw,
+  ArrowDown,
+  ArrowUp,
+  Sun,
+  Moon,
+  Monitor,
+  ChevronDown,
+  GitBranch,
+  Check,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -6,15 +17,62 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRepositoryStore } from '@/application/stores';
+import { useGitService } from '@/application/hooks';
 import { useTheme } from '@/presentation/providers';
 import { RepositorySelector } from '@/presentation/components/repository';
+import { tauriGitService } from '@/infrastructure/services';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import type { Branch } from '@/domain/entities';
 
 export function Toolbar() {
   const { currentRepo, status, isRefreshing } = useRepositoryStore();
+  const { refreshStatus } = useGitService();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const loadBranches = useCallback(async () => {
+    if (!currentRepo) return;
+    setIsLoadingBranches(true);
+    try {
+      const loadedBranches = await tauriGitService.getBranches(currentRepo.path);
+      setBranches(loadedBranches);
+    } catch (error) {
+      console.error('Failed to load branches:', error);
+    } finally {
+      setIsLoadingBranches(false);
+    }
+  }, [currentRepo]);
+
+  useEffect(() => {
+    loadBranches();
+  }, [loadBranches]);
+
+  const handleCheckout = async (branch: Branch) => {
+    if (!currentRepo || branch.is_current || branch.is_remote) return;
+    setIsCheckingOut(true);
+    try {
+      await tauriGitService.checkoutBranch(currentRepo.path, branch.name);
+      toast.success(`Switched to ${branch.name}`);
+      await loadBranches();
+      await refreshStatus(currentRepo.path);
+    } catch (error) {
+      toast.error(`Failed to checkout: ${error}`);
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
+  const localBranches = branches.filter((b) => !b.is_remote);
+  const currentBranch = branches.find((b) => b.is_current);
+  const currentBranchName = status?.branch ?? currentRepo?.branch ?? 'No branch';
 
   return (
     <header className="flex h-12 items-center gap-2 border-b px-4">
@@ -40,17 +98,76 @@ export function Toolbar() {
       <div className="flex-1" />
 
       {currentRepo && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">
-            {status?.branch ?? currentRepo.branch ?? 'No branch'}
-          </span>
-          {status && (status.ahead > 0 || status.behind > 0) && (
-            <span>
-              {status.ahead > 0 && `↑${status.ahead}`}
-              {status.behind > 0 && `↓${status.behind}`}
-            </span>
-          )}
-        </div>
+        <DropdownMenu onOpenChange={(open) => open && loadBranches()}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1"
+              disabled={isCheckingOut}
+            >
+              <GitBranch className="h-4 w-4" />
+              <span className="font-medium">{currentBranchName}</span>
+              {(currentBranch?.ahead ?? status?.ahead ?? 0) > 0 && (
+                <span className="text-xs text-green-500">
+                  ↑{currentBranch?.ahead ?? status?.ahead}
+                </span>
+              )}
+              {(currentBranch?.behind ?? status?.behind ?? 0) > 0 && (
+                <span className="text-xs text-red-500">
+                  ↓{currentBranch?.behind ?? status?.behind}
+                </span>
+              )}
+              <ChevronDown className="h-3 w-3 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              Switch branch
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <ScrollArea className="max-h-64">
+              {isLoadingBranches ? (
+                <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                  <RefreshCw className="mx-auto h-4 w-4 animate-spin" />
+                </div>
+              ) : localBranches.length === 0 ? (
+                <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                  No branches found
+                </div>
+              ) : (
+                localBranches.map((branch) => (
+                  <DropdownMenuItem
+                    key={branch.name}
+                    onClick={() => handleCheckout(branch)}
+                    disabled={branch.is_current}
+                    className={cn(
+                      'flex items-center gap-2 cursor-pointer',
+                      branch.is_current && 'bg-accent'
+                    )}
+                  >
+                    {branch.is_current ? (
+                      <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    ) : (
+                      <GitBranch className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    )}
+                    <span className="truncate flex-1">{branch.name}</span>
+                    {(branch.ahead > 0 || branch.behind > 0) && (
+                      <span className="text-xs flex-shrink-0">
+                        {branch.ahead > 0 && (
+                          <span className="text-green-500">↑{branch.ahead}</span>
+                        )}
+                        {branch.behind > 0 && (
+                          <span className="text-red-500">↓{branch.behind}</span>
+                        )}
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+                ))
+              )}
+            </ScrollArea>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
 
       <Separator orientation="vertical" className="h-6" />
