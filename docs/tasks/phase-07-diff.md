@@ -5,6 +5,24 @@ Afficher les différences de fichiers en mode unified et side-by-side.
 
 ---
 
+## Fonctionnalités additionnelles implémentées
+
+### Diff pour fichiers untracked
+- Nouvelle fonction `get_untracked_file_diff()` dans le backend
+- Lit le contenu du fichier et le présente comme des additions (+)
+- Permet de visualiser le contenu avant de stager
+
+### Gestion des line endings (CRLF/LF)
+- Paramètre `ignore_cr` dans `get_file_diff()`
+- Utilise `--ignore-cr-at-eol` pour ignorer les différences CRLF/LF
+- Pour les fichiers EOL-only, affiche les changements réels (sans ignorer CR)
+
+### Props du DiffViewer
+- `untracked?: boolean` - pour les fichiers non suivis
+- `onlyEolChanges?: boolean` - pour afficher les changements EOL réels
+
+---
+
 ## Architecture DDD
 
 ### Aggregate: FileDiff
@@ -133,25 +151,78 @@ export function useDiff(path: string, staged: boolean, commitHash?: string) {
 - `src-tauri/src/git/mod.rs` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src-tauri/src/git/diff.rs`:
+- [x] Créer `src-tauri/src/git/diff.rs`:
 ```rust
 use crate::git::error::GitError;
 use crate::git::executor::GitExecutor;
 use crate::git::types::*;
+use std::path::Path;
+use std::fs;
 
+/// Get diff for a tracked file with optional EOL ignore
 pub fn get_file_diff(
     executor: &GitExecutor,
     path: &str,
     staged: bool,
+    ignore_cr: bool,
 ) -> Result<FileDiff, GitError> {
-    let args = if staged {
-        vec!["diff", "--cached", "--", path]
+    let mut args = if staged {
+        vec!["diff", "--cached"]
     } else {
-        vec!["diff", "--", path]
+        vec!["diff"]
     };
+
+    if ignore_cr {
+        args.push("--ignore-cr-at-eol");
+    }
+
+    args.push("--");
+    args.push(path);
 
     let output = executor.execute_checked(&args)?;
     parse_diff(&output, path)
+}
+
+/// Get diff for an untracked file (shows content as additions)
+pub fn get_untracked_file_diff(executor: &GitExecutor, path: &str) -> Result<FileDiff, GitError> {
+    let full_path = Path::new(executor.repo_path()).join(path);
+    let content = fs::read_to_string(&full_path).map_err(|e| {
+        GitError::IoError { message: format!("Failed to read file {}: {}", path, e) }
+    })?;
+
+    let lines: Vec<DiffLine> = content
+        .lines()
+        .enumerate()
+        .map(|(i, line): (usize, &str)| DiffLine {
+            line_type: DiffLineType::Addition,
+            old_line_number: None,
+            new_line_number: Some((i + 1) as u32),
+            content: line.to_string(),
+        })
+        .collect();
+
+    let additions = lines.len() as u32;
+
+    Ok(FileDiff {
+        old_path: None,
+        new_path: path.to_string(),
+        status: FileStatus::Untracked,
+        hunks: if lines.is_empty() {
+            Vec::new()
+        } else {
+            vec![DiffHunk {
+                old_start: 0,
+                old_lines: 0,
+                new_start: 1,
+                new_lines: additions,
+                header: format!("@@ -0,0 +1,{} @@ New file", additions),
+                lines,
+            }]
+        },
+        is_binary: false,
+        additions,
+        deletions: 0,
+    })
 }
 
 pub fn get_commit_diff(executor: &GitExecutor, hash: &str) -> Result<Vec<FileDiff>, GitError> {
@@ -322,7 +393,7 @@ fn parse_range(range: &str) -> (u32, u32) {
     (start, lines)
 }
 ```
-- [ ] Ajouter `pub mod diff;` dans `src-tauri/src/git/mod.rs`
+- [x] Ajouter `pub mod diff;` dans `src-tauri/src/git/mod.rs`
 
 ---
 
@@ -336,7 +407,7 @@ fn parse_range(range: &str) -> (u32, u32) {
 - `src-tauri/src/lib.rs` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src-tauri/src/commands/diff.rs`:
+- [x] Créer `src-tauri/src/commands/diff.rs`:
 ```rust
 use crate::git::{diff, executor::GitExecutor, types::FileDiff};
 
@@ -345,9 +416,19 @@ pub async fn get_file_diff(
     repo_path: String,
     file_path: String,
     staged: bool,
+    ignore_cr: bool,
 ) -> Result<FileDiff, String> {
     let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
-    diff::get_file_diff(&executor, &file_path, staged).map_err(|e| e.to_string())
+    diff::get_file_diff(&executor, &file_path, staged, ignore_cr).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_untracked_file_diff(
+    repo_path: String,
+    file_path: String,
+) -> Result<FileDiff, String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+    diff::get_untracked_file_diff(&executor, &file_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -356,8 +437,8 @@ pub async fn get_commit_diff(repo_path: String, hash: String) -> Result<Vec<File
     diff::get_commit_diff(&executor, &hash).map_err(|e| e.to_string())
 }
 ```
-- [ ] Ajouter `pub mod diff;` dans `src-tauri/src/commands/mod.rs`
-- [ ] Ajouter les commandes au `generate_handler![]` dans `lib.rs`
+- [x] Ajouter `pub mod diff;` dans `src-tauri/src/commands/mod.rs`
+- [x] Ajouter les commandes au `generate_handler![]` dans `lib.rs`
 
 ---
 
@@ -372,14 +453,22 @@ pub async fn get_commit_diff(repo_path: String, hash: String) -> Result<Vec<File
 - `src/services/git/index.ts` (mise à jour)
 
 **Actions**:
-- [ ] Créer le dossier `src/components/diff/`
-- [ ] Ajouter dans `src/services/git/index.ts`:
+- [x] Créer le dossier `src/components/diff/`
+- [x] Ajouter dans `src/services/git/index.ts`:
 ```typescript
-async getFileDiff(path: string, staged: boolean): Promise<FileDiff> {
+async getFileDiff(path: string, staged: boolean, ignoreCr: boolean = true): Promise<FileDiff> {
   return invoke('get_file_diff', {
     repoPath: this.repoPath,
     filePath: path,
-    staged
+    staged,
+    ignoreCr
+  });
+}
+
+async getUntrackedFileDiff(path: string): Promise<FileDiff> {
+  return invoke('get_untracked_file_diff', {
+    repoPath: this.repoPath,
+    filePath: path
   });
 }
 
@@ -387,7 +476,7 @@ async getCommitDiff(hash: string): Promise<FileDiff[]> {
   return invoke('get_commit_diff', { repoPath: this.repoPath, hash });
 }
 ```
-- [ ] Créer `src/components/diff/DiffViewer.tsx`:
+- [x] Créer `src/components/diff/DiffViewer.tsx`:
 ```typescript
 import { useState, useEffect } from 'react';
 import { AlignJustify, Columns } from 'lucide-react';
@@ -403,10 +492,12 @@ import type { FileDiff } from '@/types/git';
 interface DiffViewerProps {
   path: string;
   staged?: boolean;
+  untracked?: boolean;        // NEW: for untracked files
+  onlyEolChanges?: boolean;   // NEW: to show actual EOL changes
   commitHash?: string;
 }
 
-export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps) {
+export function DiffViewer({ path, staged = false, untracked = false, onlyEolChanges = false, commitHash }: DiffViewerProps) {
   const { diffMode, setDiffMode } = useUIStore();
   const { currentRepo } = useRepositoryStore();
   const [diff, setDiff] = useState<FileDiff | null>(null);
@@ -426,8 +517,14 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
           const diffs = await git.getCommitDiff(commitHash);
           const fileDiff = diffs.find((d) => d.new_path === path);
           setDiff(fileDiff ?? null);
+        } else if (untracked) {
+          // NEW: Handle untracked files
+          const fileDiff = await git.getUntrackedFileDiff(path);
+          setDiff(fileDiff);
         } else {
-          const fileDiff = await git.getFileDiff(path, staged);
+          // Don't ignore CR for EOL-only files so we can see the changes
+          const ignoreCr = !onlyEolChanges;
+          const fileDiff = await git.getFileDiff(path, staged, ignoreCr);
           setDiff(fileDiff);
         }
       } catch (err) {
@@ -438,7 +535,7 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
     }
 
     fetchDiff();
-  }, [path, staged, commitHash, currentRepo]);
+  }, [path, staged, untracked, onlyEolChanges, commitHash, currentRepo]);
 
   if (loading) {
     return (
@@ -497,7 +594,7 @@ export function DiffViewer({ path, staged = false, commitHash }: DiffViewerProps
   );
 }
 ```
-- [ ] Créer `src/components/diff/DiffHeader.tsx`:
+- [x] Créer `src/components/diff/DiffHeader.tsx`:
 ```typescript
 import { ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -527,7 +624,7 @@ export function DiffHeader({ diff, children }: DiffHeaderProps) {
   );
 }
 ```
-- [ ] Créer `src/components/diff/index.ts`:
+- [x] Créer `src/components/diff/index.ts`:
 ```typescript
 export { DiffViewer } from './DiffViewer';
 export { DiffHeader } from './DiffHeader';
@@ -545,7 +642,7 @@ export { SideBySideDiff } from './SideBySideDiff';
 - `src/components/diff/UnifiedDiff.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/diff/UnifiedDiff.tsx`:
+- [x] Créer `src/components/diff/UnifiedDiff.tsx`:
 ```typescript
 import { cn } from '@/lib/utils';
 import type { DiffHunk, DiffLineType } from '@/types/git';
@@ -618,7 +715,7 @@ export function UnifiedDiff({ hunks }: UnifiedDiffProps) {
 - `src/components/diff/SideBySideDiff.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/diff/SideBySideDiff.tsx`:
+- [x] Créer `src/components/diff/SideBySideDiff.tsx`:
 ```typescript
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
@@ -750,16 +847,22 @@ export function SideBySideDiff({ hunks }: SideBySideDiffProps) {
 - `src/components/status/StatusView.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Mettre à jour `StatusView.tsx` pour afficher le diff:
+- [x] Mettre à jour `StatusView.tsx` pour afficher le diff:
 ```typescript
 import { DiffViewer } from '@/components/diff';
 
-// Dans le ResizablePanel de droite:
+// Dans le ResizablePanel de droite, avec support untracked et EOL-only:
 <ResizablePanel defaultSize={70}>
   {selectedFiles.length > 0 ? (
     <DiffViewer
       path={selectedFiles[0]}
       staged={status?.staged.some(f => f.path === selectedFiles[0]) ?? false}
+      untracked={status?.untracked.some(f => f.path === selectedFiles[0]) ?? false}
+      onlyEolChanges={
+        status?.staged.find(f => f.path === selectedFiles[0])?.only_eol_changes ||
+        status?.unstaged.find(f => f.path === selectedFiles[0])?.only_eol_changes ||
+        false
+      }
     />
   ) : (
     <div className="flex h-full items-center justify-center text-muted-foreground">

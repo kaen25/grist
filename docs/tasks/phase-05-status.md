@@ -22,7 +22,7 @@ Afficher l'état des fichiers (staged, unstaged, untracked).
 
 | Entity | Fichier | Description |
 |--------|---------|-------------|
-| `StatusEntry` | `status-entry.entity.ts` | Fichier avec ses statuts index/worktree |
+| `StatusEntry` | `status-entry.entity.ts` | Fichier avec ses statuts index/worktree, original_path (pour renames), only_eol_changes |
 
 ### Value Objects (utilisés)
 
@@ -150,15 +150,50 @@ export function useGitStatus(pollInterval = 3000) {
 - `src-tauri/src/git/mod.rs` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src-tauri/src/git/status.rs`:
+- [x] Créer `src-tauri/src/git/status.rs`:
 ```rust
 use crate::git::error::GitError;
 use crate::git::executor::GitExecutor;
 use crate::git::types::*;
 
 pub fn get_status(executor: &GitExecutor) -> Result<GitStatus, GitError> {
-    let output = executor.execute_checked(&["status", "--porcelain=v2", "--branch", "-z"])?;
-    parse_status_v2(&output)
+    // Use --untracked-files=all to show individual files instead of directories
+    let output = executor.execute_checked(&["status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all"])?;
+    let mut status = parse_status_v2(&output)?;
+
+    // Check for EOL-only changes in modified files
+    detect_eol_only_changes(executor, &mut status);
+
+    Ok(status)
+}
+
+/// Check if modified files have only line ending changes
+fn detect_eol_only_changes(executor: &GitExecutor, status: &mut GitStatus) {
+    // Check unstaged modified files
+    for entry in &mut status.unstaged {
+        if entry.worktree_status == FileStatus::Modified {
+            entry.only_eol_changes = is_eol_only_change(executor, &entry.path, false);
+        }
+    }
+    // Check staged modified files
+    for entry in &mut status.staged {
+        if entry.index_status == FileStatus::Modified {
+            entry.only_eol_changes = is_eol_only_change(executor, &entry.path, true);
+        }
+    }
+}
+
+/// Check if a file's changes are only line endings by comparing diff with and without --ignore-cr-at-eol
+fn is_eol_only_change(executor: &GitExecutor, path: &str, staged: bool) -> bool {
+    let args_with_ignore = if staged {
+        vec!["diff", "--cached", "--ignore-cr-at-eol", "--", path]
+    } else {
+        vec!["diff", "--ignore-cr-at-eol", "--", path]
+    };
+    match executor.execute_checked(&args_with_ignore) {
+        Ok(output) => output.trim().is_empty(),
+        Err(_) => false,
+    }
 }
 
 fn parse_status_v2(output: &str) -> Result<GitStatus, GitError> {
@@ -173,7 +208,14 @@ fn parse_status_v2(output: &str) -> Result<GitStatus, GitError> {
         conflicted: Vec::new(),
     };
 
-    for entry in output.split('\0').filter(|s| !s.is_empty()) {
+    // Split by null bytes - for rename entries (type 2), the original path
+    // comes as the next entry after the main entry
+    let entries: Vec<&str> = output.split('\0').filter(|s| !s.is_empty()).collect();
+    let mut i = 0;
+
+    while i < entries.len() {
+        let entry = entries[i];
+
         if entry.starts_with("# branch.head ") {
             let branch = entry[14..].to_string();
             status.branch = if branch == "(detached)" { None } else { Some(branch) };
@@ -185,8 +227,17 @@ fn parse_status_v2(output: &str) -> Result<GitStatus, GitError> {
                 status.ahead = parts[0].trim_start_matches('+').parse().unwrap_or(0);
                 status.behind = parts[1].trim_start_matches('-').parse().unwrap_or(0);
             }
-        } else if entry.starts_with("1 ") || entry.starts_with("2 ") {
-            parse_changed_entry(entry, &mut status)?;
+        } else if entry.starts_with("1 ") {
+            parse_changed_entry(entry, None, &mut status)?;
+        } else if entry.starts_with("2 ") {
+            // Type 2 = rename/copy - next entry is the original path
+            let orig_path = if i + 1 < entries.len() {
+                i += 1;
+                Some(entries[i].to_string())
+            } else {
+                None
+            };
+            parse_changed_entry(entry, orig_path, &mut status)?;
         } else if entry.starts_with("u ") {
             parse_unmerged_entry(entry, &mut status)?;
         } else if entry.starts_with("? ") {
@@ -195,8 +246,11 @@ fn parse_status_v2(output: &str) -> Result<GitStatus, GitError> {
                 index_status: FileStatus::Untracked,
                 worktree_status: FileStatus::Untracked,
                 original_path: None,
+                only_eol_changes: false,
             });
         }
+
+        i += 1;
     }
 
     Ok(status)
@@ -217,20 +271,38 @@ fn parse_file_status(c: char) -> FileStatus {
     }
 }
 
-fn parse_changed_entry(entry: &str, status: &mut GitStatus) -> Result<(), GitError> {
+fn parse_changed_entry(entry: &str, original_path: Option<String>, status: &mut GitStatus) -> Result<(), GitError> {
     let parts: Vec<&str> = entry.split(' ').collect();
     if parts.len() < 9 {
         return Ok(());
     }
 
+    let is_rename = entry.starts_with("2 ");
     let xy = parts[1];
-    let path = parts[8..].join(" ");
+
+    // For type 2 (rename/copy), the path starts at index 9 (after the score field)
+    // For type 1, the path starts at index 8
+    let path = if is_rename && parts.len() >= 10 {
+        parts[9..].join(" ")
+    } else {
+        parts[8..].join(" ")
+    };
 
     let index_char = xy.chars().next().unwrap_or('.');
     let worktree_char = xy.chars().nth(1).unwrap_or('.');
 
-    let index_status = parse_file_status(index_char);
-    let worktree_status = parse_file_status(worktree_char);
+    let mut index_status = parse_file_status(index_char);
+    let mut worktree_status = parse_file_status(worktree_char);
+
+    // For renames, update the status with the original path
+    if let Some(ref orig) = original_path {
+        if let FileStatus::Renamed { ref mut from } = index_status {
+            *from = orig.clone();
+        }
+        if let FileStatus::Renamed { ref mut from } = worktree_status {
+            *from = orig.clone();
+        }
+    }
 
     // Add to staged if index has changes
     if index_char != '.' {
@@ -238,7 +310,8 @@ fn parse_changed_entry(entry: &str, status: &mut GitStatus) -> Result<(), GitErr
             path: path.clone(),
             index_status: index_status.clone(),
             worktree_status: FileStatus::Unmodified,
-            original_path: None,
+            original_path: original_path.clone(),
+            only_eol_changes: false, // Will be set later by detect_eol_only_changes
         });
     }
 
@@ -248,7 +321,8 @@ fn parse_changed_entry(entry: &str, status: &mut GitStatus) -> Result<(), GitErr
             path: path.clone(),
             index_status: FileStatus::Unmodified,
             worktree_status: worktree_status.clone(),
-            original_path: None,
+            original_path: original_path.clone(),
+            only_eol_changes: false, // Will be set later by detect_eol_only_changes
         });
     }
 
@@ -268,12 +342,13 @@ fn parse_unmerged_entry(entry: &str, status: &mut GitStatus) -> Result<(), GitEr
         index_status: FileStatus::Conflicted,
         worktree_status: FileStatus::Conflicted,
         original_path: None,
+        only_eol_changes: false,
     });
 
     Ok(())
 }
 ```
-- [ ] Ajouter `pub mod status;` dans `src-tauri/src/git/mod.rs`
+- [x] Ajouter `pub mod status;` dans `src-tauri/src/git/mod.rs`
 
 ---
 
@@ -287,7 +362,7 @@ fn parse_unmerged_entry(entry: &str, status: &mut GitStatus) -> Result<(), GitEr
 - `src-tauri/src/lib.rs` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src-tauri/src/commands/status.rs`:
+- [x] Créer `src-tauri/src/commands/status.rs`:
 ```rust
 use crate::git::{executor::GitExecutor, status, types::GitStatus};
 
@@ -297,11 +372,11 @@ pub async fn get_git_status(repo_path: String) -> Result<GitStatus, String> {
     status::get_status(&executor).map_err(|e| e.to_string())
 }
 ```
-- [ ] Ajouter dans `src-tauri/src/commands/mod.rs`:
+- [x] Ajouter dans `src-tauri/src/commands/mod.rs`:
 ```rust
 pub mod status;
 ```
-- [ ] Ajouter dans `src-tauri/src/lib.rs`:
+- [x] Ajouter dans `src-tauri/src/lib.rs`:
 ```rust
 use commands::status::get_git_status;
 
@@ -322,7 +397,7 @@ use commands::status::get_git_status;
 - `src/domain/services/status-classifier.service.ts`
 
 **Actions**:
-- [ ] Créer `src/domain/interfaces/status.repository.ts`:
+- [x] Créer `src/domain/interfaces/status.repository.ts`:
 ```typescript
 import type { GitStatus } from '@/domain/value-objects';
 
@@ -330,7 +405,7 @@ export interface IStatusRepository {
   getStatus(repoPath: string): Promise<GitStatus>;
 }
 ```
-- [ ] Créer `src/infrastructure/repositories/tauri-status.repository.ts`:
+- [x] Créer `src/infrastructure/repositories/tauri-status.repository.ts`:
 ```typescript
 import { invoke } from '@tauri-apps/api/core';
 import type { IStatusRepository } from '@/domain/interfaces';
@@ -342,12 +417,12 @@ export class TauriStatusRepository implements IStatusRepository {
   }
 }
 ```
-- [ ] Créer `src/infrastructure/repositories/index.ts`:
+- [x] Créer `src/infrastructure/repositories/index.ts`:
 ```typescript
 export { TauriRepositoryRepository } from './tauri-repository.repository';
 export { TauriStatusRepository } from './tauri-status.repository';
 ```
-- [ ] Créer `src/domain/services/status-classifier.service.ts` (voir Architecture DDD)
+- [x] Créer `src/domain/services/status-classifier.service.ts` (voir Architecture DDD)
 
 ---
 
@@ -360,8 +435,8 @@ export { TauriStatusRepository } from './tauri-status.repository';
 - `src/application/hooks/index.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/application/hooks/`
-- [ ] Créer `src/application/hooks/useGitStatus.ts`:
+- [x] Créer le dossier `src/application/hooks/`
+- [x] Créer `src/application/hooks/useGitStatus.ts`:
 ```typescript
 import { useEffect, useCallback, useRef } from 'react';
 import { useRepositoryStore } from '@/application/stores';
@@ -419,7 +494,7 @@ export function useGitStatus(pollInterval = 3000) {
   return { refresh: fetchStatus };
 }
 ```
-- [ ] Créer `src/application/hooks/index.ts`:
+- [x] Créer `src/application/hooks/index.ts`:
 ```typescript
 export { useRepository } from './useRepository';
 export { useGitStatus } from './useGitStatus';
@@ -436,8 +511,8 @@ export { useGitStatus } from './useGitStatus';
 - `src/presentation/components/status/index.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/presentation/components/status/`
-- [ ] Créer `src/presentation/components/status/StatusView.tsx`:
+- [x] Créer le dossier `src/presentation/components/status/`
+- [x] Créer `src/presentation/components/status/StatusView.tsx`:
 ```typescript
 import {
   ResizableHandle,
@@ -502,7 +577,7 @@ export function StatusView() {
   );
 }
 ```
-- [ ] Créer `src/presentation/components/status/index.ts`:
+- [x] Créer `src/presentation/components/status/index.ts`:
 ```typescript
 export { StatusView } from './StatusView';
 export { FileTree } from './FileTree';
@@ -520,7 +595,7 @@ export { FileItem } from './FileItem';
 - `src/presentation/components/status/FileItem.tsx`
 
 **Actions**:
-- [ ] Créer `src/presentation/components/status/FileTree.tsx`:
+- [x] Créer `src/presentation/components/status/FileTree.tsx`:
 ```typescript
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
@@ -571,71 +646,36 @@ export function FileTree({ title, files, type }: FileTreeProps) {
   );
 }
 ```
-- [ ] Créer `src/presentation/components/status/FileItem.tsx`:
+- [x] Créer `src/presentation/components/status/FileItem.tsx` avec:
+  - Affichage du status, icône et label
+  - Support des renames avec affichage `original_path → path`
+  - Badge "(EOL)" pour les fichiers avec `only_eol_changes`
+  - Context menu pour stage/unstage/discard
+  - Multi-sélection (Shift+clic, Ctrl+clic)
+
 ```typescript
-import { File, FileText, FilePlus, FileMinus, FileQuestion } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useUIStore } from '@/application/stores';
-import { StatusClassifier } from '@/domain/services/status-classifier.service';
-import { cn } from '@/lib/utils';
-import type { StatusEntry, FileStatus } from '@/domain/entities';
-import type { FileStatus } from '@/domain/value-objects';
-
-interface FileItemProps {
-  entry: StatusEntry;
-  type: 'staged' | 'unstaged' | 'untracked' | 'conflicted';
-}
-
-const iconMap: Record<string, typeof File> = {
-  FilePlus, FileMinus, FileText, FileQuestion, File,
-};
-
-function getStatusIcon(status: FileStatus) {
-  const iconName = StatusClassifier.getIcon(status);
-  return iconMap[iconName] ?? File;
-}
-
-export function FileItem({ entry, type }: FileItemProps) {
-  const { selectedFiles, toggleFileSelection } = useUIStore();
-  const isSelected = selectedFiles.includes(entry.path);
-
-  const status = type === 'staged' ? entry.index_status : entry.worktree_status;
-  const Icon = getStatusIcon(status);
-  const color = StatusClassifier.getColor(status);
-  const label = StatusClassifier.getLabel(status);
-
-  const fileName = entry.path.split('/').pop() ?? entry.path;
-  const dirPath = entry.path.includes('/')
-    ? entry.path.substring(0, entry.path.lastIndexOf('/'))
-    : '';
-
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className={cn(
-        'w-full justify-start gap-2 px-2 h-7',
-        isSelected && 'bg-accent'
-      )}
-      onClick={() => toggleFileSelection(entry.path)}
-    >
-      <span className={cn('w-4 text-center text-xs font-mono', color)}>
-        {label}
-      </span>
-      <Icon className={cn('h-4 w-4 flex-shrink-0', color)} />
-      <span className="truncate flex-1 text-left">
-        {fileName}
-        {dirPath && (
-          <span className="text-muted-foreground ml-1 text-xs">
-            {dirPath}
-          </span>
-        )}
-      </span>
-    </Button>
-  );
-}
+// FileItem affiche maintenant:
+// - Pour les renames: <original_path> → <new_path>
+// - Pour EOL-only: opacity-50 et badge "(EOL)"
+{entry.original_path ? (
+  <>
+    <span className="text-muted-foreground">{entry.original_path}</span>
+    <span className="mx-1">→</span>
+    {entry.path}
+  </>
+) : (
+  <>
+    {fileName}
+    {dirPath && <span className="text-muted-foreground ml-1 text-xs">{dirPath}</span>}
+  </>
+)}
+{entry.only_eol_changes && (
+  <span className="ml-2 text-xs text-muted-foreground italic" title="Only line ending changes (CRLF/LF)">
+    (EOL)
+  </span>
+)}
 ```
-- [ ] Mettre à jour `src/App.tsx` pour utiliser `StatusView`:
+- [x] Mettre à jour `src/App.tsx` pour utiliser `StatusView`:
 ```typescript
 import { StatusView } from '@/presentation/components/status';
 
@@ -646,4 +686,4 @@ case 'status':
 
 ---
 
-## Progression: 6/6
+## Progression: 6/6 COMPLETE
