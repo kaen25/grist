@@ -14,6 +14,7 @@ A modern desktop Git GUI application built with Tauri 2.0, designed as an altern
 - **Branch Management**: Create, checkout, rename, delete (local/remote) branches via context menu
 - **Branch Switching**: Quick branch checkout via toolbar dropdown with ahead/behind indicators
 - **Tag Management**: Create and delete tags (local/remote) via commit context menu
+- **Context Menu**: GitExtensions-style right-click menu with submenus for branch/tag operations
 - **EOL Detection**: Filter files with only line-ending changes
 - **Resizable Panels**: Customizable layout with draggable splitters
 - **Theme Support**: Light, dark, and system themes
