@@ -1,17 +1,67 @@
+use std::fs;
+use std::path::Path;
+
 use crate::git::error::GitError;
 use crate::git::executor::GitExecutor;
 use crate::git::types::*;
+
+/// Get diff for an untracked file (show entire content as additions)
+pub fn get_untracked_file_diff(executor: &GitExecutor, path: &str) -> Result<FileDiff, GitError> {
+    let full_path = Path::new(executor.repo_path()).join(path);
+
+    let content = fs::read_to_string(&full_path).map_err(|e| {
+        GitError::IoError { message: format!("Failed to read file {}: {}", path, e) }
+    })?;
+
+    let lines: Vec<DiffLine> = content
+        .lines()
+        .enumerate()
+        .map(|(i, line): (usize, &str)| DiffLine {
+            line_type: DiffLineType::Addition,
+            old_line_number: None,
+            new_line_number: Some((i + 1) as u32),
+            content: line.to_string(),
+        })
+        .collect();
+
+    let line_count = lines.len() as u32;
+
+    Ok(FileDiff {
+        old_path: None,
+        new_path: path.to_string(),
+        status: FileStatus::Untracked,
+        hunks: vec![DiffHunk {
+            old_start: 0,
+            old_lines: 0,
+            new_start: 1,
+            new_lines: line_count,
+            header: format!("@@ -0,0 +1,{} @@ New file", line_count),
+            lines,
+        }],
+        is_binary: false,
+        additions: line_count,
+        deletions: 0,
+    })
+}
 
 pub fn get_file_diff(
     executor: &GitExecutor,
     path: &str,
     staged: bool,
+    ignore_cr: bool,
 ) -> Result<FileDiff, GitError> {
-    let args = if staged {
-        vec!["diff", "--cached", "--", path]
+    let mut args = if staged {
+        vec!["diff", "--cached"]
     } else {
-        vec!["diff", "--", path]
+        vec!["diff"]
     };
+
+    if ignore_cr {
+        args.push("--ignore-cr-at-eol");
+    }
+
+    args.push("--");
+    args.push(path);
 
     let output = executor.execute_checked(&args)?;
     parse_diff(&output, path)
@@ -192,8 +242,8 @@ pub fn stage_lines(
     path: &str,
     line_indices_by_hunk: std::collections::HashMap<usize, Vec<usize>>,
 ) -> Result<(), GitError> {
-    // Get the current unstaged diff
-    let diff = get_file_diff(executor, path, false)?;
+    // Get the current unstaged diff (without ignore_cr for staging)
+    let diff = get_file_diff(executor, path, false, false)?;
 
     // Generate a partial patch
     let patch = generate_partial_patch(&diff, &line_indices_by_hunk, false)?;
@@ -214,8 +264,8 @@ pub fn unstage_lines(
     path: &str,
     line_indices_by_hunk: std::collections::HashMap<usize, Vec<usize>>,
 ) -> Result<(), GitError> {
-    // Get the current staged diff
-    let diff = get_file_diff(executor, path, true)?;
+    // Get the current staged diff (without ignore_cr for unstaging)
+    let diff = get_file_diff(executor, path, true, false)?;
 
     // Generate a partial patch (reversed for unstaging)
     let patch = generate_partial_patch(&diff, &line_indices_by_hunk, true)?;

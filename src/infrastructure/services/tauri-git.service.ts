@@ -45,8 +45,12 @@ export const tauriGitService: IGitRepository = {
     return invoke('get_stashes', { repoPath });
   },
 
-  async getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<FileDiff> {
-    return invoke('get_file_diff', { repoPath, filePath, staged });
+  async getFileDiff(repoPath: string, filePath: string, staged: boolean, ignoreCr = true): Promise<FileDiff> {
+    return invoke('get_file_diff', { repoPath, filePath, staged, ignoreCr });
+  },
+
+  async getUntrackedFileDiff(repoPath: string, filePath: string): Promise<FileDiff> {
+    return invoke('get_untracked_file_diff', { repoPath, filePath });
   },
 
   async getCommitDiff(repoPath: string, hash: string): Promise<FileDiff[]> {

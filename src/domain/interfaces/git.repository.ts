@@ -24,7 +24,8 @@ export interface IGitRepository {
   getStashes(repoPath: string): Promise<Stash[]>;
 
   // Diff
-  getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<FileDiff>;
+  getFileDiff(repoPath: string, filePath: string, staged: boolean, ignoreCr?: boolean): Promise<FileDiff>;
+  getUntrackedFileDiff(repoPath: string, filePath: string): Promise<FileDiff>;
   getCommitDiff(repoPath: string, hash: string): Promise<FileDiff[]>;
 
   // Staging
