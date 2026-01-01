@@ -1,6 +1,7 @@
 import { AppLayout } from '@/presentation/components/layout';
 import { StatusView } from '@/presentation/components/status';
 import { useUIStore } from '@/application/stores';
+import { Toaster } from '@/components/ui/sonner';
 
 // Placeholder views - will be implemented in later phases
 
@@ -68,7 +69,12 @@ function App() {
     }
   };
 
-  return <AppLayout>{renderView()}</AppLayout>;
+  return (
+    <>
+      <AppLayout>{renderView()}</AppLayout>
+      <Toaster />
+    </>
+  );
 }
 
 export default App;

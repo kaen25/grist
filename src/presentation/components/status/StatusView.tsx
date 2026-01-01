@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { FileTree } from './FileTree';
 import { DiffViewer } from '../diff';
+import { CommitPanel } from '../commit';
 import { useRepositoryStore, useUIStore } from '@/application/stores';
 import { useGitStatus, useStagingActions } from '@/application/hooks';
 
@@ -95,7 +96,8 @@ export function StatusView() {
       <ResizablePanelGroup className="h-full">
         {/* Left panel: File lists */}
         <ResizablePanel defaultSize={30} minSize={20}>
-          <ScrollArea className="h-full">
+          <div className="flex flex-col h-full overflow-hidden">
+          <ScrollArea className="flex-1 min-h-0">
             <div className="p-2 space-y-2">
               {/* EOL filter toggle */}
               <div className="flex items-center justify-between px-2 py-1">
@@ -148,6 +150,8 @@ export function StatusView() {
               )}
             </div>
           </ScrollArea>
+          <CommitPanel />
+          </div>
         </ResizablePanel>
 
         <ResizableHandle withHandle />
