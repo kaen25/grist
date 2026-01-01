@@ -85,4 +85,13 @@ export const tauriGitService: IGitRepository = {
   async unstageLines(repoPath: string, filePath: string, lineIndicesByHunk: Record<number, number[]>): Promise<void> {
     return invoke('unstage_lines', { repoPath, filePath, lineIndicesByHunk });
   },
+
+  // Commit
+  async createCommit(repoPath: string, message: string, amend: boolean): Promise<string> {
+    return invoke('create_commit', { repoPath, message, amend });
+  },
+
+  async getLastCommitMessage(repoPath: string): Promise<string> {
+    return invoke('get_last_commit_message', { repoPath });
+  },
 };

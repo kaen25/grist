@@ -38,4 +38,8 @@ export interface IGitRepository {
   // Partial staging (line-level)
   stageLines(repoPath: string, filePath: string, lineIndicesByHunk: Record<number, number[]>): Promise<void>;
   unstageLines(repoPath: string, filePath: string, lineIndicesByHunk: Record<number, number[]>): Promise<void>;
+
+  // Commit
+  createCommit(repoPath: string, message: string, amend: boolean): Promise<string>;
+  getLastCommitMessage(repoPath: string): Promise<string>;
 }
