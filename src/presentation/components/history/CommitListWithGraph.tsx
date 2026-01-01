@@ -37,6 +37,8 @@ function getNodeCenter(row: number, column: number): { x: number; y: number } {
   };
 }
 
+const CORNER_RADIUS = 6;
+
 function createEdgePath(edge: GraphEdge): string {
   const from = getNodeCenter(edge.fromRow, edge.fromColumn);
   const to = getNodeCenter(edge.toRow, edge.toColumn);
@@ -46,11 +48,23 @@ function createEdgePath(edge: GraphEdge): string {
     return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
   }
 
-  // Curved line (cubic Bézier)
-  // Control points create smooth S-curve
-  const midY = from.y + (to.y - from.y) * 0.4;
+  // 90-degree angle path with rounded corners
+  const r = CORNER_RADIUS;
+  const goingRight = to.x > from.x;
+  const dx = goingRight ? 1 : -1;
 
-  return `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
+  // Corner is positioned just below the source commit
+  const cornerY = from.y + ROW_HEIGHT / 2;
+
+  // Path: down -> rounded corner -> horizontal -> rounded corner -> down
+  return [
+    `M ${from.x} ${from.y}`,
+    `L ${from.x} ${cornerY - r}`,
+    `Q ${from.x} ${cornerY} ${from.x + dx * r} ${cornerY}`,
+    `L ${to.x - dx * r} ${cornerY}`,
+    `Q ${to.x} ${cornerY} ${to.x} ${cornerY + r}`,
+    `L ${to.x} ${to.y}`,
+  ].join(' ');
 }
 
 // =============================================================================

@@ -29,7 +29,7 @@ export interface GraphLayout {
 }
 
 // =============================================================================
-// Color Palette (12 distinct colors)
+// Color Palette
 // =============================================================================
 
 const BRANCH_COLORS = [
@@ -52,12 +52,13 @@ export function getColumnColor(column: number): string {
 }
 
 // =============================================================================
-// Curved Branch Algorithm (GitExtensions style)
+// Straight Branch Algorithm with Proper Column Reuse
 // =============================================================================
 
-interface ActiveBranch {
-  hash: string;
-  color: string;
+interface EdgeInterval {
+  startRow: number;
+  endRow: number;
+  column: number;
 }
 
 export function calculateGraphLayout(commits: Commit[]): GraphLayout {
@@ -67,75 +68,57 @@ export function calculateGraphLayout(commits: Commit[]): GraphLayout {
 
   // Build lookup maps
   const hashToRow = new Map<string, number>();
-  const hashToNode = new Map<string, GraphNode>();
   commits.forEach((c, i) => hashToRow.set(c.hash, i));
 
-  // Track which commits are branch tips (have refs or are first commit)
-  const branchTips = new Set<string>();
-  commits.forEach((c) => {
-    if (c.refs && c.refs.length > 0) {
-      branchTips.add(c.hash);
-    }
-  });
-  // First commit is always a tip
-  if (commits.length > 0) {
-    branchTips.add(commits[0].hash);
-  }
-
-  // Track which commits have children (to detect branch tips)
+  // Track branch tips
   const hasChildren = new Set<string>();
   commits.forEach((c) => {
     c.parent_hashes.forEach((ph) => hasChildren.add(ph));
   });
 
+  const branchTips = new Set<string>();
+  commits.forEach((c) => {
+    if ((c.refs && c.refs.length > 0) || !hasChildren.has(c.hash)) {
+      branchTips.add(c.hash);
+    }
+  });
+
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
 
-  // Active branches: ordered list of branches flowing through current row
-  // Each entry is { hash, color } where hash is the commit we're waiting for
-  const activeBranches: (ActiveBranch | null)[] = [];
+  // Track edge intervals: which rows each column is occupied
+  const edgeIntervals: EdgeInterval[] = [];
+
+  // Track commit -> column assignment for continuing branches
+  const commitColumn = new Map<string, number>();
+  const commitColor = new Map<string, string>();
+
   let colorIndex = 0;
   let maxColumn = 0;
 
-  // Process commits from top (newest) to bottom (oldest)
+  // Process commits from top to bottom
   for (let row = 0; row < commits.length; row++) {
     const commit = commits[row];
     const isMerge = commit.parent_hashes.length > 1;
-    const isBranchTip = branchTips.has(commit.hash) || !hasChildren.has(commit.hash);
+    const isBranchTip = branchTips.has(commit.hash);
 
-    // Step 1: Find column for this commit
-    let column = -1;
-    let nodeColor = '';
+    let column: number;
+    let nodeColor: string;
 
-    // Check if this commit is expected in any active branch
-    for (let i = 0; i < activeBranches.length; i++) {
-      if (activeBranches[i]?.hash === commit.hash) {
-        column = i;
-        nodeColor = activeBranches[i]!.color;
-        break;
-      }
-    }
-
-    // If not found, find first free slot or create new column
-    if (column === -1) {
-      // New branch starting - assign new color
+    // Check if this commit was assigned a column by a child
+    if (commitColumn.has(commit.hash)) {
+      column = commitColumn.get(commit.hash)!;
+      nodeColor = commitColor.get(commit.hash)!;
+    } else {
+      // Find first column that's free at this row
+      column = findFreeColumnAtRow(row, edgeIntervals);
       nodeColor = BRANCH_COLORS[colorIndex % BRANCH_COLORS.length];
       colorIndex++;
-
-      // Find first null slot
-      const freeSlot = activeBranches.indexOf(null);
-      if (freeSlot !== -1) {
-        column = freeSlot;
-        activeBranches[freeSlot] = { hash: commit.hash, color: nodeColor };
-      } else {
-        column = activeBranches.length;
-        activeBranches.push({ hash: commit.hash, color: nodeColor });
-      }
     }
 
     maxColumn = Math.max(maxColumn, column);
 
-    // Step 2: Create node
+    // Create node
     const node: GraphNode = {
       commit,
       column,
@@ -145,98 +128,156 @@ export function calculateGraphLayout(commits: Commit[]): GraphLayout {
       isBranchTip,
     };
     nodes.push(node);
-    hashToNode.set(commit.hash, node);
 
-    // Step 3: Handle parents and create edges
+    // Process parents
     const parentCount = commit.parent_hashes.length;
 
-    if (parentCount === 0) {
-      // Root commit - clear this column
-      // For curved style: remove and shift
-      activeBranches.splice(column, 1);
-    } else {
-      // Process each parent
-      for (let pi = 0; pi < parentCount; pi++) {
+    if (parentCount > 0) {
+      // First parent
+      const firstParentHash = commit.parent_hashes[0];
+      const firstParentRow = hashToRow.get(firstParentHash);
+
+      if (firstParentRow !== undefined) {
+        let parentCol: number;
+        let edgeColor: string;
+
+        // Check if parent already has a column assigned (by another child)
+        if (commitColumn.has(firstParentHash)) {
+          // Parent already assigned - edge goes to that column
+          parentCol = commitColumn.get(firstParentHash)!;
+          edgeColor = commitColor.get(firstParentHash)!;
+        } else {
+          // First child to claim this parent - use same column
+          parentCol = column;
+          edgeColor = nodeColor;
+          commitColumn.set(firstParentHash, parentCol);
+          commitColor.set(firstParentHash, edgeColor);
+        }
+
+        // Add edge interval
+        edgeIntervals.push({
+          startRow: row,
+          endRow: firstParentRow,
+          column: parentCol,
+        });
+
+        edges.push({
+          fromRow: row,
+          fromColumn: column,
+          toRow: firstParentRow,
+          toColumn: parentCol,
+          color: edgeColor,
+          isMergeEdge: false,
+        });
+      }
+
+      // Additional parents (merges)
+      for (let pi = 1; pi < parentCount; pi++) {
         const parentHash = commit.parent_hashes[pi];
         const parentRow = hashToRow.get(parentHash);
 
-        if (parentRow === undefined) continue; // Parent not in visible commits
+        if (parentRow === undefined) continue;
 
-        if (pi === 0) {
-          // First parent: continues in same column
-          activeBranches[column] = { hash: parentHash, color: nodeColor };
+        let parentColumn: number;
+        let parentColor: string;
 
-          edges.push({
-            fromRow: row,
-            fromColumn: column,
-            toRow: parentRow,
-            toColumn: column, // Same column for first parent
-            color: nodeColor,
-            isMergeEdge: false,
-          });
+        // Check if parent already has a column
+        if (commitColumn.has(parentHash)) {
+          parentColumn = commitColumn.get(parentHash)!;
+          parentColor = commitColor.get(parentHash)!;
         } else {
-          // Merge parent: need to find or create its column
-          let parentColumn = -1;
-          let parentColor = nodeColor;
+          // Find free column for the entire range from this commit to parent
+          parentColumn = findFreeColumnForRange(row, parentRow, edgeIntervals, column);
+          parentColor = BRANCH_COLORS[colorIndex % BRANCH_COLORS.length];
+          colorIndex++;
 
-          // Check if parent is already in an active column
-          for (let i = 0; i < activeBranches.length; i++) {
-            if (activeBranches[i]?.hash === parentHash) {
-              parentColumn = i;
-              parentColor = activeBranches[i]!.color;
-              break;
-            }
-          }
-
-          // If not, allocate new column for merge parent
-          if (parentColumn === -1) {
-            parentColor = BRANCH_COLORS[colorIndex % BRANCH_COLORS.length];
-            colorIndex++;
-
-            const freeSlot = activeBranches.findIndex((b, idx) => b === null && idx !== column);
-            if (freeSlot !== -1) {
-              parentColumn = freeSlot;
-              activeBranches[freeSlot] = { hash: parentHash, color: parentColor };
-            } else {
-              parentColumn = activeBranches.length;
-              activeBranches.push({ hash: parentHash, color: parentColor });
-            }
-            maxColumn = Math.max(maxColumn, parentColumn);
-          }
-
-          edges.push({
-            fromRow: row,
-            fromColumn: column,
-            toRow: parentRow,
-            toColumn: parentColumn,
-            color: parentColor,
-            isMergeEdge: true,
-          });
+          commitColumn.set(parentHash, parentColumn);
+          commitColor.set(parentHash, parentColor);
         }
+
+        maxColumn = Math.max(maxColumn, parentColumn);
+
+        // Add edge interval
+        edgeIntervals.push({
+          startRow: row,
+          endRow: parentRow,
+          column: parentColumn,
+        });
+
+        edges.push({
+          fromRow: row,
+          fromColumn: column,
+          toRow: parentRow,
+          toColumn: parentColumn,
+          color: parentColor,
+          isMergeEdge: true,
+        });
       }
-    }
-
-    // Step 4: Clean up completed branches (curved style)
-    // Remove null entries from the end to compact
-    while (activeBranches.length > 0 && activeBranches[activeBranches.length - 1] === null) {
-      activeBranches.pop();
-    }
-  }
-
-  // Post-process: Update edge target columns based on actual node positions
-  // (needed because columns can shift in curved mode)
-  for (const edge of edges) {
-    const targetNode = nodes.find((n) => n.row === edge.toRow);
-    if (targetNode) {
-      edge.toColumn = targetNode.column;
     }
   }
 
   return { nodes, edges, maxColumn };
 }
 
+// Find a column that has no edge passing through the given row
+function findFreeColumnAtRow(row: number, intervals: EdgeInterval[]): number {
+  let col = 0;
+  while (isColumnOccupiedAtRow(col, row, intervals)) {
+    col++;
+  }
+  return col;
+}
+
+// Find a column that has no edge passing through any row in [startRow, endRow]
+function findFreeColumnForRange(
+  startRow: number,
+  endRow: number,
+  intervals: EdgeInterval[],
+  excludeColumn: number
+): number {
+  let col = 0;
+  while (true) {
+    if (col === excludeColumn) {
+      col++;
+      continue;
+    }
+    if (!isColumnOccupiedInRange(col, startRow, endRow, intervals)) {
+      return col;
+    }
+    col++;
+  }
+}
+
+// Check if a column has an edge passing through a specific row
+function isColumnOccupiedAtRow(column: number, row: number, intervals: EdgeInterval[]): boolean {
+  for (const interval of intervals) {
+    if (interval.column === column && interval.startRow <= row && interval.endRow >= row) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Check if a column has an edge passing through any row in range
+function isColumnOccupiedInRange(
+  column: number,
+  startRow: number,
+  endRow: number,
+  intervals: EdgeInterval[]
+): boolean {
+  for (const interval of intervals) {
+    if (interval.column === column) {
+      // Check if intervals overlap
+      if (interval.startRow <= endRow && interval.endRow >= startRow) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // =============================================================================
-// Helper to get continuous lane segments for rendering
+// Lane Segments Helper
 // =============================================================================
 
 export interface LaneSegment {
@@ -254,11 +295,9 @@ export function calculateLaneSegments(nodes: GraphNode[]): LaneSegment[] {
     const { column, row, color } = node;
 
     if (!activeSegments.has(column)) {
-      // Start new segment
       activeSegments.set(column, { startRow: row, color });
     } else {
       const segment = activeSegments.get(column)!;
-      // If color changed or there's a gap, close old segment and start new
       if (segment.color !== color) {
         segments.push({
           column,
@@ -271,7 +310,6 @@ export function calculateLaneSegments(nodes: GraphNode[]): LaneSegment[] {
     }
   }
 
-  // Close remaining segments
   const lastRow = nodes.length > 0 ? nodes[nodes.length - 1].row : 0;
   for (const [column, segment] of activeSegments.entries()) {
     segments.push({
