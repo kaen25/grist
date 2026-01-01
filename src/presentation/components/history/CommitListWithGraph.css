@@ -1,0 +1,66 @@
+/* Graph hover effects and animations */
+
+.graph-node {
+  transition: transform 0.15s ease-out;
+}
+
+.graph-node:hover {
+  transform: scale(1.3);
+}
+
+.graph-node-shape {
+  transition: filter 0.15s ease-out, stroke-width 0.15s ease-out;
+}
+
+.graph-node:hover .graph-node-shape {
+  filter: brightness(1.2) drop-shadow(0 0 3px currentColor);
+  stroke-width: 2;
+}
+
+.graph-edge {
+  transition: opacity 0.15s ease-out, stroke-width 0.15s ease-out;
+}
+
+.graph-edge:hover {
+  opacity: 1;
+  stroke-width: 3;
+}
+
+.graph-label {
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  pointer-events: none;
+}
+
+.graph-node:hover + .graph-label,
+.graph-label:hover {
+  opacity: 1;
+}
+
+/* Selection ring animation */
+.selection-ring {
+  animation: selection-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes selection-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform-origin: center;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Branch tip indicator */
+.branch-tip-ring {
+  animation: tip-glow 2s ease-in-out infinite;
+}
+
+@keyframes tip-glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

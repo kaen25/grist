@@ -1,8 +1,9 @@
 import { useRef, useEffect, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { CommitItem } from './CommitItem';
-import { calculateGraphLayout, getColumnColor } from './graphLayout';
+import { calculateGraphLayout, type GraphNode, type GraphEdge } from './graphLayout';
 import type { Commit } from '@/domain/entities';
+import './CommitListWithGraph.css';
 
 interface CommitListWithGraphProps {
   commits: Commit[];
@@ -13,10 +14,47 @@ interface CommitListWithGraphProps {
   hasMore: boolean;
 }
 
-const ROW_HEIGHT = 64;
-const COLUMN_WIDTH = 16;
-const NODE_RADIUS = 4;
-const GRAPH_PADDING = 10;
+// =============================================================================
+// Constants
+// =============================================================================
+
+const ROW_HEIGHT = 56;
+const COLUMN_WIDTH = 24;
+const NODE_RADIUS = 5;
+const NODE_RADIUS_MERGE = 6;
+const GRAPH_PADDING = 16;
+const LINE_WIDTH = 2;
+
+// =============================================================================
+// SVG Path Helpers
+// =============================================================================
+
+function getNodeCenter(row: number, column: number): { x: number; y: number } {
+  return {
+    x: GRAPH_PADDING + column * COLUMN_WIDTH + COLUMN_WIDTH / 2,
+    y: row * ROW_HEIGHT + ROW_HEIGHT / 2,
+  };
+}
+
+function createEdgePath(edge: GraphEdge): string {
+  const from = getNodeCenter(edge.fromRow, edge.fromColumn);
+  const to = getNodeCenter(edge.toRow, edge.toColumn);
+
+  if (edge.fromColumn === edge.toColumn) {
+    // Straight vertical line
+    return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
+  }
+
+  // Curved line (cubic Bézier)
+  // Control points create smooth S-curve
+  const midY = from.y + (to.y - from.y) * 0.4;
+
+  return `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
+}
+
+// =============================================================================
+// Component
+// =============================================================================
 
 export function CommitListWithGraph({
   commits,
@@ -28,14 +66,22 @@ export function CommitListWithGraph({
 }: CommitListWithGraphProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // Calculate graph layout
   const layout = useMemo(() => calculateGraphLayout(commits), [commits]);
   const graphWidth = (layout.maxColumn + 1) * COLUMN_WIDTH + GRAPH_PADDING * 2;
+
+  // Build lookup maps for quick access
+  const nodeByRow = useMemo(() => {
+    const map = new Map<number, GraphNode>();
+    layout.nodes.forEach((node) => map.set(node.row, node));
+    return map;
+  }, [layout.nodes]);
 
   const virtualizer = useVirtualizer({
     count: commits.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT,
-    overscan: 10,
+    overscan: 15,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -60,6 +106,18 @@ export function CommitListWithGraph({
 
   const totalHeight = virtualizer.getTotalSize();
 
+  // Determine visible range for edge rendering
+  const visibleStart = virtualItems.length > 0 ? virtualItems[0].index : 0;
+  const visibleEnd = virtualItems.length > 0 ? virtualItems[virtualItems.length - 1].index : 0;
+  const bufferRows = 10;
+
+  // Filter edges that intersect with visible range (with buffer)
+  const visibleEdges = layout.edges.filter((edge) => {
+    const minRow = Math.min(edge.fromRow, edge.toRow);
+    const maxRow = Math.max(edge.fromRow, edge.toRow);
+    return maxRow >= visibleStart - bufferRows && minRow <= visibleEnd + bufferRows;
+  });
+
   return (
     <div ref={parentRef} className="h-full overflow-auto">
       <div
@@ -69,78 +127,152 @@ export function CommitListWithGraph({
           position: 'relative',
         }}
       >
-        {/* SVG Graph - positioned absolutely to cover the full height */}
+        {/* SVG Graph */}
         <svg
           width={graphWidth}
           height={totalHeight}
-          className="absolute left-0 top-0 pointer-events-none"
+          className="absolute left-0 top-0"
           style={{ minWidth: graphWidth }}
         >
-          {/* Only render visible connections and nodes */}
-          {virtualItems.map((virtualRow) => {
-            const node = layout.nodes[virtualRow.index];
-            if (!node) return null;
+          {/* Render edges (connections) first - behind nodes */}
+          <g className="edges">
+            {visibleEdges.map((edge, idx) => (
+              <path
+                key={`edge-${idx}`}
+                className="graph-edge"
+                d={createEdgePath(edge)}
+                stroke={edge.color}
+                strokeWidth={LINE_WIDTH}
+                fill="none"
+                strokeLinecap="round"
+                opacity={0.8}
+              />
+            ))}
+          </g>
 
-            return (
-              <g key={node.commit.hash}>
-                {/* Connections to parents */}
-                {node.parentConnections.map((conn, idx) => {
-                  const x1 = GRAPH_PADDING + node.column * COLUMN_WIDTH + COLUMN_WIDTH / 2;
-                  const y1 = node.row * ROW_HEIGHT + ROW_HEIGHT / 2;
-                  const x2 = GRAPH_PADDING + conn.parentColumn * COLUMN_WIDTH + COLUMN_WIDTH / 2;
-                  const y2 = conn.parentRow * ROW_HEIGHT + ROW_HEIGHT / 2;
-                  const color = getColumnColor(node.column);
+          {/* Render nodes */}
+          <g className="nodes">
+            {virtualItems.map((virtualRow) => {
+              const node = nodeByRow.get(virtualRow.index);
+              if (!node) return null;
 
-                  if (node.column === conn.parentColumn) {
-                    return (
-                      <line
-                        key={`${node.commit.hash}-conn-${idx}`}
-                        x1={x1}
-                        y1={y1}
-                        x2={x2}
-                        y2={y2}
-                        stroke={color}
-                        strokeWidth={2}
-                      />
-                    );
-                  }
+              const { x, y } = getNodeCenter(node.row, node.column);
+              const isSelected = node.commit.hash === selectedHash;
+              const radius = node.isMerge ? NODE_RADIUS_MERGE : NODE_RADIUS;
 
-                  // Curved line for merges/branches
-                  const midY = y1 + (y2 - y1) / 3;
-                  return (
-                    <path
-                      key={`${node.commit.hash}-conn-${idx}`}
-                      d={`M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`}
-                      stroke={color}
-                      strokeWidth={2}
+              return (
+                <g
+                  key={node.commit.hash}
+                  className="graph-node"
+                  onClick={() => onSelect(node.commit.hash)}
+                  style={{ cursor: 'pointer', transformOrigin: `${x}px ${y}px` }}
+                >
+                  {/* Selection ring */}
+                  {isSelected && (
+                    <circle
+                      className="selection-ring"
+                      cx={x}
+                      cy={y}
+                      r={radius + 4}
                       fill="none"
+                      stroke={node.color}
+                      strokeWidth={2}
                     />
-                  );
-                })}
+                  )}
 
-                {/* Node circle */}
-                <circle
-                  cx={GRAPH_PADDING + node.column * COLUMN_WIDTH + COLUMN_WIDTH / 2}
-                  cy={node.row * ROW_HEIGHT + ROW_HEIGHT / 2}
-                  r={NODE_RADIUS}
-                  fill={getColumnColor(node.column)}
-                />
+                  {/* Node circle */}
+                  {node.isMerge ? (
+                    // Diamond shape for merge commits
+                    <path
+                      className="graph-node-shape"
+                      d={`M ${x} ${y - radius} L ${x + radius} ${y} L ${x} ${y + radius} L ${x - radius} ${y} Z`}
+                      fill={node.color}
+                      stroke="var(--background)"
+                      strokeWidth={1.5}
+                      style={{ color: node.color }}
+                    />
+                  ) : (
+                    // Regular circle
+                    <circle
+                      className="graph-node-shape"
+                      cx={x}
+                      cy={y}
+                      r={radius}
+                      fill={node.color}
+                      stroke="var(--background)"
+                      strokeWidth={1.5}
+                      style={{ color: node.color }}
+                    />
+                  )}
 
-                {/* Selection highlight */}
-                {node.commit.hash === selectedHash && (
+                  {/* Branch tip indicator (larger outer ring) */}
+                  {node.isBranchTip && !isSelected && (
+                    <circle
+                      className="branch-tip-ring"
+                      cx={x}
+                      cy={y}
+                      r={radius + 2}
+                      fill="none"
+                      stroke={node.color}
+                      strokeWidth={1}
+                    />
+                  )}
+
+                  {/* Hover area (invisible larger circle) */}
                   <circle
-                    cx={GRAPH_PADDING + node.column * COLUMN_WIDTH + COLUMN_WIDTH / 2}
-                    cy={node.row * ROW_HEIGHT + ROW_HEIGHT / 2}
-                    r={NODE_RADIUS + 3}
-                    fill="none"
-                    stroke={getColumnColor(node.column)}
-                    strokeWidth={2}
-                    opacity={0.5}
+                    cx={x}
+                    cy={y}
+                    r={radius + 8}
+                    fill="transparent"
                   />
-                )}
-              </g>
-            );
-          })}
+
+                  {/* Tooltip */}
+                  <title>{node.commit.short_hash}: {node.commit.subject}</title>
+                </g>
+              );
+            })}
+          </g>
+
+          {/* Branch labels for tips with refs */}
+          <g className="labels">
+            {virtualItems.map((virtualRow) => {
+              const node = nodeByRow.get(virtualRow.index);
+              if (!node || !node.commit.refs || node.commit.refs.length === 0) return null;
+
+              const { x, y } = getNodeCenter(node.row, node.column);
+              const label = node.commit.refs[0]
+                .replace('HEAD -> ', '')
+                .replace('origin/', '')
+                .replace('refs/heads/', '')
+                .replace('refs/tags/', '');
+
+              return (
+                <g key={`label-${node.commit.hash}`} className="graph-label">
+                  {/* Label background */}
+                  <rect
+                    x={x + NODE_RADIUS + 6}
+                    y={y - 8}
+                    width={label.length * 6 + 8}
+                    height={16}
+                    rx={3}
+                    fill={node.color}
+                    opacity={0.9}
+                  />
+                  {/* Label text */}
+                  <text
+                    x={x + NODE_RADIUS + 10}
+                    y={y + 4}
+                    fontSize={10}
+                    fontFamily="monospace"
+                    fill="white"
+                    fontWeight="500"
+                  >
+                    {label}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
         </svg>
 
         {/* Commit items */}

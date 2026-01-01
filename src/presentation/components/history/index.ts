@@ -3,4 +3,3 @@ export { CommitList } from './CommitList';
 export { CommitListWithGraph } from './CommitListWithGraph';
 export { CommitItem } from './CommitItem';
 export { CommitDetails } from './CommitDetails';
-export { CommitGraph } from './CommitGraph';
