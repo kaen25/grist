@@ -660,4 +660,25 @@ case 'branches':
 
 ---
 
-## Progression: 8/8
+## Tâche 11.9: GitExtensions-style context menu et smart delete
+
+**Commit**: `feat: add GitExtensions-style context menu with submenus`
+
+**Fichiers**:
+- `src/presentation/components/history/CommitItem.tsx`
+
+**Actions**:
+- [x] Restructurer le context menu style GitExtensions avec sous-menus
+- [x] Ajouter sous-menu "Copy to clipboard" (hash, subject)
+- [x] Ajouter "Checkout this commit"
+- [x] Filtrer les branches par commit (contextuel)
+- [x] Masquer HEAD dans le menu delete branch
+- [x] Filtrer origin/HEAD
+- [x] Smart force delete: si d'autres refs existent sur le commit, force delete direct sans confirmation
+- [x] Détection d'erreur indépendante de la langue (via "git branch -D" dans le message)
+- [x] Dialogue de confirmation uniquement si risque réel de perte de commits
+- [x] Unifier delete tag avec le même style que delete branch
+
+---
+
+## Progression: 9/9
