@@ -157,7 +157,7 @@ export function useCommit() {
 - `src-tauri/src/lib.rs` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src-tauri/src/git/commit.rs`:
+- [x] Créer `src-tauri/src/git/commit.rs`:
 ```rust
 use crate::git::error::GitError;
 use crate::git::executor::GitExecutor;
@@ -184,8 +184,8 @@ pub fn get_last_commit_message(executor: &GitExecutor) -> Result<String, GitErro
     Ok(output.trim().to_string())
 }
 ```
-- [ ] Ajouter `pub mod commit;` dans `src-tauri/src/git/mod.rs`
-- [ ] Créer `src-tauri/src/commands/commit.rs`:
+- [x] Ajouter `pub mod commit;` dans `src-tauri/src/git/mod.rs`
+- [x] Créer `src-tauri/src/commands/commit.rs`:
 ```rust
 use crate::git::{commit, executor::GitExecutor};
 
@@ -205,8 +205,8 @@ pub async fn get_last_commit_message(repo_path: String) -> Result<String, String
     commit::get_last_commit_message(&executor).map_err(|e| e.to_string())
 }
 ```
-- [ ] Ajouter `pub mod commit;` dans `src-tauri/src/commands/mod.rs`
-- [ ] Ajouter les commandes au `generate_handler![]`
+- [x] Ajouter `pub mod commit;` dans `src-tauri/src/commands/mod.rs`
+- [x] Ajouter les commandes au `generate_handler![]`
 
 ---
 
@@ -215,8 +215,8 @@ pub async fn get_last_commit_message(repo_path: String) -> Result<String, String
 **Commit**: `feat: add amend commit support`
 
 **Actions**:
-- [ ] Vérifier que `amend` fonctionne dans `create_commit`
-- [ ] Ajouter `get_last_commit_message` pour pré-remplir le message
+- [x] Vérifier que `amend` fonctionne dans `create_commit`
+- [x] Ajouter `get_last_commit_message` pour pré-remplir le message
 
 ---
 
@@ -230,8 +230,8 @@ pub async fn get_last_commit_message(repo_path: String) -> Result<String, String
 - `src/services/git/index.ts` (mise à jour)
 
 **Actions**:
-- [ ] Créer le dossier `src/components/commit/`
-- [ ] Ajouter dans `src/services/git/index.ts`:
+- [x] Créer le dossier `src/presentation/components/commit/`
+- [x] Ajouter dans `src/infrastructure/services/tauri-git.service.ts` et `src/domain/interfaces/git.repository.ts`:
 ```typescript
 async createCommit(message: string, amend: boolean = false): Promise<string> {
   return invoke('create_commit', {
@@ -245,7 +245,7 @@ async getLastCommitMessage(): Promise<string> {
   return invoke('get_last_commit_message', { repoPath: this.repoPath });
 }
 ```
-- [ ] Créer `src/components/commit/CommitPanel.tsx`:
+- [x] Créer `src/presentation/components/commit/CommitPanel.tsx`:
 ```typescript
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -348,7 +348,7 @@ export function CommitPanel() {
   );
 }
 ```
-- [ ] Créer `src/components/commit/index.ts`:
+- [x] Créer `src/presentation/components/commit/index.ts`:
 ```typescript
 export { CommitPanel } from './CommitPanel';
 export { CommitMessageEditor } from './CommitMessageEditor';
@@ -364,7 +364,7 @@ export { CommitMessageEditor } from './CommitMessageEditor';
 - `src/components/commit/CommitMessageEditor.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/commit/CommitMessageEditor.tsx`:
+- [x] Créer `src/presentation/components/commit/CommitMessageEditor.tsx`:
 ```typescript
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -428,7 +428,7 @@ export function CommitMessageEditor({
 - `src/components/status/StatusView.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Mettre à jour `StatusView.tsx`:
+- [x] Mettre à jour `StatusView.tsx`:
 ```typescript
 import { CommitPanel } from '@/components/commit';
 
@@ -454,8 +454,8 @@ import { CommitPanel } from '@/components/commit';
 - `src/App.tsx` (ajout Toaster)
 
 **Actions**:
-- [ ] Installer sonner: `pnpm dlx shadcn@latest add sonner`
-- [ ] Ajouter `<Toaster />` dans `App.tsx`:
+- [x] Installer sonner: `pnpm dlx shadcn@latest add sonner` (déjà installé)
+- [x] Ajouter `<Toaster />` dans `App.tsx`:
 ```typescript
 import { Toaster } from '@/components/ui/sonner';
 
@@ -465,7 +465,7 @@ import { Toaster } from '@/components/ui/sonner';
   <Toaster />
 </>
 ```
-- [ ] Utiliser toast dans `CommitPanel.tsx`:
+- [x] Utiliser toast dans `CommitPanel.tsx`:
 ```typescript
 import { toast } from 'sonner';
 
@@ -478,4 +478,4 @@ toast.error(`Commit failed: ${error}`);
 
 ---
 
-## Progression: 0/6
+## Progression: 6/6 COMPLETE
