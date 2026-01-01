@@ -23,6 +23,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -81,6 +82,8 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [showCreateTagDialog, setShowCreateTagDialog] = useState(false);
+  const [showForceDeleteDialog, setShowForceDeleteDialog] = useState(false);
+  const [branchToForceDelete, setBranchToForceDelete] = useState('');
   const [branchName, setBranchName] = useState('');
   const [renameFrom, setRenameFrom] = useState('');
   const [renameTo, setRenameTo] = useState('');
@@ -89,6 +92,7 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
   const [isCreating, setIsCreating] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const [isForceDeleting, setIsForceDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Get local branches ON THIS COMMIT (for rename - contextual)
@@ -141,7 +145,53 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
       toast.success(`Deleted branch "${name}"`);
       onBranchChange?.();
     } catch (error) {
+      const errorMsg = String(error);
+      // Check if it's a "not fully merged" error - offer force delete
+      // Git suggests "git branch -D" in the hint - this command is never translated
+      if (errorMsg.includes('git branch -D')) {
+        // Check if other refs exist on this commit - if so, safe to force delete
+        const otherRefs = commit.refs.filter((ref) => {
+          const { branchName, isRemote } = formatRef(ref);
+          // Exclude the branch we're deleting and HEAD markers
+          if (branchName === 'HEAD') return false;
+          if (!isRemote && branchName === name) return false;
+          return true;
+        });
+
+        if (otherRefs.length > 0) {
+          // Other refs exist, safe to force delete without confirmation
+          try {
+            await tauriGitService.deleteBranch(currentRepo.path, name, true);
+            toast.success(`Deleted branch "${name}"`);
+            onBranchChange?.();
+          } catch (forceError) {
+            toast.error(`Failed to delete branch: ${forceError}`);
+          }
+        } else {
+          // No other refs, show confirmation dialog
+          setBranchToForceDelete(name);
+          setShowForceDeleteDialog(true);
+        }
+      } else {
+        toast.error(`Failed to delete branch: ${error}`);
+      }
+    }
+  };
+
+  const handleForceDeleteBranch = async () => {
+    if (!currentRepo || !branchToForceDelete) return;
+
+    setIsForceDeleting(true);
+    try {
+      await tauriGitService.deleteBranch(currentRepo.path, branchToForceDelete, true);
+      toast.success(`Deleted branch "${branchToForceDelete}"`);
+      setShowForceDeleteDialog(false);
+      setBranchToForceDelete('');
+      onBranchChange?.();
+    } catch (error) {
       toast.error(`Failed to delete branch: ${error}`);
+    } finally {
+      setIsForceDeleting(false);
     }
   };
 
@@ -612,6 +662,43 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
             </Button>
             <Button onClick={handleCreateTag} disabled={!tagName.trim() || isCreatingTag}>
               {isCreatingTag ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Force Delete Branch Confirmation Dialog */}
+      <Dialog open={showForceDeleteDialog} onOpenChange={setShowForceDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Branch Not Fully Merged</DialogTitle>
+            <DialogDescription>
+              The branch "{branchToForceDelete}" is not fully merged. Deleting it may result in losing commits that are not reachable from any other branch.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to force delete this branch?
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowForceDeleteDialog(false);
+                setBranchToForceDelete('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleForceDeleteBranch}
+              disabled={isForceDeleting}
+            >
+              {isForceDeleting ? 'Deleting...' : 'Force Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
