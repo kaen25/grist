@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DiffViewer } from '../diff';
+import { GravatarAvatar } from '../common';
 import { useRepositoryStore } from '@/application/stores';
 import { tauriGitService } from '@/infrastructure/services';
 import { cn } from '@/lib/utils';
@@ -96,9 +97,17 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
           </div>
 
           {/* Author and date */}
-          <div className="text-sm text-muted-foreground">
-            <div>{commit.author_name} &lt;{commit.author_email}&gt;</div>
-            <div>{formattedDate}</div>
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <GravatarAvatar
+              email={commit.author_email}
+              name={commit.author_name}
+              size={32}
+              fallback="identicon"
+            />
+            <div>
+              <div className="text-foreground font-medium">{commit.author_name}</div>
+              <div>{formattedDate}</div>
+            </div>
           </div>
 
           {/* Parent commits */}

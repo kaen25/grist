@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useRepositoryStore } from '@/application/stores';
 import { tauriGitService } from '@/infrastructure/services';
+import { GravatarAvatar } from '@/presentation/components/common';
 import { toast } from 'sonner';
 import type { Commit } from '@/domain/entities';
 
@@ -60,22 +61,6 @@ function formatRef(ref: string): RefInfo {
   }
 
   return { label, isHead, isTag, isRemote, remoteName, branchName };
-}
-
-// Simple avatar with initials
-function AuthorAvatar({ name }: { name: string }) {
-  const initials = name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground flex-shrink-0">
-      {initials}
-    </div>
-  );
 }
 
 export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: CommitItemProps) {
@@ -281,7 +266,12 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
             </div>
 
             {/* Author avatar */}
-            <AuthorAvatar name={commit.author_name} />
+            <GravatarAvatar
+              email={commit.author_email}
+              name={commit.author_name}
+              size={20}
+              fallback="identicon"
+            />
 
             {/* Short hash */}
             <span className="font-mono text-xs text-muted-foreground flex-shrink-0">
