@@ -4,6 +4,7 @@ import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { DiffViewer } from '../diff';
 import { GravatarAvatar } from '../common';
 import { useRepositoryStore } from '@/application/stores';
@@ -52,76 +53,159 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const formattedDate = format(new Date(commit.date), 'PPpp');
+  const authorDate = format(new Date(commit.author_date), 'PPpp');
+  const committerDate = format(new Date(commit.committer_date), 'PPpp');
+
+  // Check if author and committer are different
+  const isDifferentCommitter =
+    commit.author_name !== commit.committer_name ||
+    commit.author_email !== commit.committer_email;
 
   return (
     <div className="flex h-full flex-col">
-      <ScrollArea className="flex-none max-h-48 p-4 border-b">
-        <div className="space-y-3">
-          {/* Hash */}
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm">{commit.hash}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleCopyHash}
-            >
-              {copied ? (
-                <Check className="h-3 w-3" />
-              ) : (
-                <Copy className="h-3 w-3" />
+      <ScrollArea className="flex-none border-b">
+        <div className="p-4">
+          {/* Two-column responsive grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
+            {/* Left: Commit Message */}
+            <div className="min-w-0">
+              <h3 className="font-semibold text-base leading-tight">{commit.subject}</h3>
+              {commit.body && (
+                <pre className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed font-sans mt-2 max-h-32 overflow-y-auto">
+                  {commit.body}
+                </pre>
               )}
-            </Button>
-          </div>
-
-          {/* Refs */}
-          {commit.refs.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {commit.refs.map((ref) => (
-                <Badge key={ref} variant="secondary">
-                  {ref}
-                </Badge>
-              ))}
             </div>
-          )}
 
-          {/* Subject and body */}
-          <div>
-            <h3 className="font-semibold">{commit.subject}</h3>
-            {commit.body && (
-              <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-                {commit.body}
-              </p>
-            )}
-          </div>
+            {/* Right: Meta info */}
+            <div className="lg:w-80 lg:border-l lg:pl-4 space-y-2 text-sm">
+              {/* SHA */}
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground w-20 flex-shrink-0">SHA</span>
+                <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded truncate">
+                  {commit.short_hash}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 flex-shrink-0"
+                  onClick={handleCopyHash}
+                  title="Copy full hash"
+                >
+                  {copied ? (
+                    <Check className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )}
+                </Button>
+              </div>
 
-          {/* Author and date */}
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <GravatarAvatar
-              email={commit.author_email}
-              name={commit.author_name}
-              size={32}
-              fallback="identicon"
-            />
-            <div>
-              <div className="text-foreground font-medium">{commit.author_name}</div>
-              <div>{formattedDate}</div>
+              {/* Parents */}
+              {commit.parent_hashes.length > 0 && (
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-20 flex-shrink-0">
+                    {commit.parent_hashes.length > 1 ? 'Parents' : 'Parent'}
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {commit.parent_hashes.map((hash) => (
+                      <code
+                        key={hash}
+                        className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded"
+                      >
+                        {hash.substring(0, 8)}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Refs */}
+              {commit.refs.length > 0 && (
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-20 flex-shrink-0">Refs</span>
+                  <div className="flex flex-wrap gap-1">
+                    {commit.refs.map((ref) => {
+                      const isTag = ref.includes('tag:') || ref.includes('refs/tags/');
+                      const isRemote = ref.includes('origin/') || ref.includes('refs/remotes/');
+                      const label = ref
+                        .replace('HEAD -> ', '')
+                        .replace('tag: ', '')
+                        .replace('refs/heads/', '')
+                        .replace('refs/tags/', '')
+                        .replace('refs/remotes/', '');
+
+                      return (
+                        <Badge
+                          key={ref}
+                          variant="outline"
+                          className={cn(
+                            'text-xs font-normal',
+                            isTag && 'border-amber-500 text-amber-600',
+                            !isTag && isRemote && 'border-red-500 text-red-600',
+                            !isTag && !isRemote && 'border-green-500 text-green-600'
+                          )}
+                        >
+                          {label}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <Separator className="my-2" />
+
+              {/* Author */}
+              <div className="flex items-start gap-2">
+                <span className="text-muted-foreground w-20 flex-shrink-0">Author</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <GravatarAvatar
+                    email={commit.author_email}
+                    name={commit.author_name}
+                    size={20}
+                    fallback="identicon"
+                    className="flex-shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <div className="truncate">
+                      <span className="font-medium">{commit.author_name}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{authorDate}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Committer (only show if different from author) */}
+              {isDifferentCommitter && (
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-20 flex-shrink-0">Committer</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <GravatarAvatar
+                      email={commit.committer_email}
+                      name={commit.committer_name}
+                      size={20}
+                      fallback="identicon"
+                      className="flex-shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <div className="truncate">
+                        <span className="font-medium">{commit.committer_name}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">{committerDate}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Show commit date if same person but different dates */}
+              {!isDifferentCommitter && commit.author_date !== commit.committer_date && (
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground w-20 flex-shrink-0">Committed</span>
+                  <span className="text-xs text-muted-foreground">{committerDate}</span>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Parent commits */}
-          {commit.parent_hashes.length > 0 && (
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium">Parents: </span>
-              {commit.parent_hashes.map((hash, i) => (
-                <span key={hash}>
-                  {i > 0 && ', '}
-                  <span className="font-mono">{hash.substring(0, 7)}</span>
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </ScrollArea>
 

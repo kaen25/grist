@@ -3,8 +3,12 @@ export interface Commit {
   short_hash: string;
   author_name: string;
   author_email: string;
-  date: string;
-  timestamp: number;
+  author_date: string;
+  author_timestamp: number;
+  committer_name: string;
+  committer_email: string;
+  committer_date: string;
+  committer_timestamp: number;
   subject: string;
   body: string;
   parent_hashes: string[];
