@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -9,7 +10,17 @@ import { useUIStore, useRepositoryStore } from '@/application/stores';
 import { useHistory } from '@/application/hooks';
 
 export function HistoryView() {
-  const { commits, isLoading, hasMore, loadMore } = useHistory();
+  // Prevent native context menu from appearing
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+  const { commits, isLoading, hasMore, loadMore, refresh } = useHistory();
   const { selectedCommit, setSelectedCommit } = useUIStore();
   const { currentRepo } = useRepositoryStore();
 
@@ -33,6 +44,7 @@ export function HistoryView() {
           onLoadMore={loadMore}
           isLoading={isLoading}
           hasMore={hasMore}
+          onBranchChange={refresh}
         />
       </ResizablePanel>
 

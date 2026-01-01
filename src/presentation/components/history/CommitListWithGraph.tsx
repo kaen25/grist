@@ -12,6 +12,7 @@ interface CommitListWithGraphProps {
   onLoadMore: () => void;
   isLoading: boolean;
   hasMore: boolean;
+  onBranchChange?: () => void;
 }
 
 // =============================================================================
@@ -63,6 +64,7 @@ export function CommitListWithGraph({
   onLoadMore,
   isLoading,
   hasMore,
+  onBranchChange,
 }: CommitListWithGraphProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -254,6 +256,7 @@ export function CommitListWithGraph({
                 commit={commit}
                 isSelected={commit.hash === selectedHash}
                 onSelect={() => onSelect(commit.hash)}
+                onBranchChange={onBranchChange}
               />
             </div>
           );
