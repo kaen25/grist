@@ -7,7 +7,7 @@ A modern desktop Git GUI application built with Tauri 2.0, designed as an altern
 ### Implemented
 - **Repository Management**: Open and browse Git repositories with recent repos list
 - **File Status & Staging**: View working tree status, stage/unstage files with multi-selection
-- **Diff Viewer**: Unified and side-by-side diff views with syntax highlighting
+- **Diff Viewer**: Unified and side-by-side diff views with syntax highlighting, image preview
 - **Commit**: Create commits with amend support, visual character limit feedback
 - **Commit History**: Virtualized list with infinite scroll, commit details with file diffs
 - **EOL Detection**: Filter files with only line-ending changes

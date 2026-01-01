@@ -22,7 +22,7 @@ Client GUI Git desktop (style GitExtensions) avec:
 | 6 | [phase-06-staging.md](./phase-06-staging.md) | ✅ 5/5 | Stage/unstage/discard, partial staging |
 | 7 | [phase-07-diff.md](./phase-07-diff.md) | ✅ 6/6 | Unified + Side-by-side diff, line selection |
 | 8 | [phase-08-commit.md](./phase-08-commit.md) | ✅ 6/6 | CommitPanel, amend, toast notifications |
-| 9 | [phase-09-history.md](./phase-09-history.md) | ⬜ 0/5 | Log, CommitList virtualisé |
+| 9 | [phase-09-history.md](./phase-09-history.md) | ✅ 5/5 | Log, CommitList virtualisé |
 | 10 | [phase-10-graph.md](./phase-10-graph.md) | ⬜ 0/4 | Graph SVG des branches |
 | 11 | [phase-11-branches.md](./phase-11-branches.md) | ⬜ 0/5 | CRUD branches |
 | 12 | [phase-12-merge-rebase.md](./phase-12-merge-rebase.md) | ⬜ 0/4 | Merge, rebase, conflits |
@@ -31,7 +31,7 @@ Client GUI Git desktop (style GitExtensions) avec:
 | 15 | [phase-15-cherry-revert.md](./phase-15-cherry-revert.md) | ⬜ 0/2 | Cherry-pick, revert |
 | 16 | [phase-16-settings.md](./phase-16-settings.md) | ⬜ 0/4 | Settings, raccourcis |
 
-**Total: 47/79 tâches (59%)**
+**Total: 52/79 tâches (66%)**
 
 ---
 
