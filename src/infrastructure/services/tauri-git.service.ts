@@ -161,6 +161,26 @@ export const tauriGitService: IGitRepository = {
     return invoke('get_stashes', { repoPath });
   },
 
+  async createStash(repoPath: string, message?: string, includeUntracked = false): Promise<void> {
+    return invoke('create_stash', { repoPath, message, includeUntracked });
+  },
+
+  async applyStash(repoPath: string, index: number): Promise<void> {
+    return invoke('apply_stash', { repoPath, index });
+  },
+
+  async popStash(repoPath: string, index: number): Promise<void> {
+    return invoke('pop_stash', { repoPath, index });
+  },
+
+  async dropStash(repoPath: string, index: number): Promise<void> {
+    return invoke('drop_stash', { repoPath, index });
+  },
+
+  async clearStashes(repoPath: string): Promise<void> {
+    return invoke('clear_stashes', { repoPath });
+  },
+
   async getTags(repoPath: string): Promise<Tag[]> {
     return invoke('get_tags', { repoPath });
   },

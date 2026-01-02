@@ -3,19 +3,9 @@ import { StatusView } from '@/presentation/components/status';
 import { HistoryView } from '@/presentation/components/history';
 import { BranchesView } from '@/presentation/components/branches';
 import { RemotesView } from '@/presentation/components/remotes';
+import { StashView } from '@/presentation/components/stash';
 import { useUIStore } from '@/application/stores';
 import { Toaster } from '@/components/ui/sonner';
-
-function StashView() {
-  return (
-    <div className="flex h-full items-center justify-center text-muted-foreground">
-      <div className="text-center">
-        <h2 className="text-lg font-medium">Stash</h2>
-        <p className="text-sm">Stashed changes will appear here</p>
-      </div>
-    </div>
-  );
-}
 
 function SettingsView() {
   return (

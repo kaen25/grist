@@ -75,6 +75,11 @@ export interface IGitRepository {
 
   // Stash
   getStashes(repoPath: string): Promise<Stash[]>;
+  createStash(repoPath: string, message?: string, includeUntracked?: boolean): Promise<void>;
+  applyStash(repoPath: string, index: number): Promise<void>;
+  popStash(repoPath: string, index: number): Promise<void>;
+  dropStash(repoPath: string, index: number): Promise<void>;
+  clearStashes(repoPath: string): Promise<void>;
 
   // Tags
   getTags(repoPath: string): Promise<Tag[]>;
