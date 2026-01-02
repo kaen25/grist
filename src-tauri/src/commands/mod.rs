@@ -5,6 +5,9 @@ pub mod commit;
 pub mod log;
 pub mod branch;
 pub mod tag;
+pub mod remote;
+pub mod config;
+pub mod keys;
 
 pub use repository::*;
 pub use status::*;
@@ -13,3 +16,6 @@ pub use commit::*;
 pub use log::*;
 pub use branch::*;
 pub use tag::*;
+pub use remote::*;
+pub use config::*;
+pub use keys::*;
