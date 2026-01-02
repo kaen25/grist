@@ -70,13 +70,27 @@ pub fn get_file_diff(
 pub fn get_commit_diff(executor: &GitExecutor, hash: &str) -> Result<Vec<FileDiff>, GitError> {
     // Use --first-parent to handle merge commits (including stashes) properly
     // Without it, merge commits show combined diff format which our parser doesn't handle
-    let output = executor.execute_checked(&["show", "--format=", "--first-parent", hash])?;
+    // Use --ignore-cr-at-eol to handle CRLF/LF differences
+    let output = executor.execute_checked(&[
+        "show",
+        "--format=",
+        "--first-parent",
+        "--ignore-cr-at-eol",
+        hash,
+    ])?;
     parse_multi_diff(&output)
 }
 
 pub fn get_stash_diff(executor: &GitExecutor, index: u32) -> Result<Vec<FileDiff>, GitError> {
     let stash_ref = format!("stash@{{{}}}", index);
-    let output = executor.execute_checked(&["stash", "show", "-p", &stash_ref])?;
+    // Use --ignore-cr-at-eol to handle CRLF/LF differences
+    let output = executor.execute_checked(&[
+        "stash",
+        "show",
+        "-p",
+        "--ignore-cr-at-eol",
+        &stash_ref,
+    ])?;
     parse_multi_diff(&output)
 }
 
