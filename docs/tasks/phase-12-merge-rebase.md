@@ -56,7 +56,7 @@ export interface IMergeRepository {
 - `src-tauri/src/commands/branch.rs` (mise à jour)
 
 **Actions**:
-- [ ] Ajouter dans `src-tauri/src/git/branch.rs`:
+- [x] Ajouter dans `src-tauri/src/git/branch.rs`:
 ```rust
 pub fn merge_branch(
     executor: &GitExecutor,
@@ -114,7 +114,7 @@ pub fn continue_rebase(executor: &GitExecutor) -> Result<(), GitError> {
     Ok(())
 }
 ```
-- [ ] Ajouter les commandes Tauri dans `commands/branch.rs`:
+- [x] Ajouter les commandes Tauri dans `commands/branch.rs`:
 ```rust
 #[tauri::command]
 pub async fn merge_branch(
@@ -144,7 +144,7 @@ pub async fn abort_rebase(repo_path: String) -> Result<(), String> {
     branch::abort_rebase(&executor).map_err(|e| e.to_string())
 }
 ```
-- [ ] Ajouter les commandes au `generate_handler![]`
+- [x] Ajouter les commandes au `generate_handler![]`
 
 ---
 
@@ -157,7 +157,7 @@ pub async fn abort_rebase(repo_path: String) -> Result<(), String> {
 - `src/services/git/index.ts` (mise à jour)
 
 **Actions**:
-- [ ] Ajouter dans `src/services/git/index.ts`:
+- [x] Ajouter dans `src/services/git/index.ts`:
 ```typescript
 async mergeBranch(name: string, noFf: boolean = false): Promise<void> {
   return invoke('merge_branch', {
@@ -179,7 +179,7 @@ async abortRebase(): Promise<void> {
   return invoke('abort_rebase', { repoPath: this.repoPath });
 }
 ```
-- [ ] Créer `src/components/branches/MergeDialog.tsx`:
+- [x] Créer `src/components/branches/MergeDialog.tsx`:
 ```typescript
 import { useState } from 'react';
 import {
@@ -305,7 +305,7 @@ export function MergeDialog({ open, onOpenChange, onMerged }: MergeDialogProps) 
 - `src/components/branches/RebaseDialog.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/branches/RebaseDialog.tsx`:
+- [x] Créer `src/components/branches/RebaseDialog.tsx`:
 ```typescript
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
@@ -436,7 +436,7 @@ export function RebaseDialog({ open, onOpenChange, onRebased }: RebaseDialogProp
 - `src/components/status/StatusView.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src/components/status/ConflictBanner.tsx`:
+- [x] Créer `src/components/status/ConflictBanner.tsx`:
 ```typescript
 import { AlertTriangle, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -484,7 +484,7 @@ export function ConflictBanner() {
   );
 }
 ```
-- [ ] Ajouter `ConflictBanner` dans `StatusView.tsx`:
+- [x] Ajouter `ConflictBanner` dans `StatusView.tsx`:
 ```typescript
 import { ConflictBanner } from './ConflictBanner';
 
@@ -499,4 +499,4 @@ import { ConflictBanner } from './ConflictBanner';
 
 ---
 
-## Progression: 0/4
+## Progression: 4/4
