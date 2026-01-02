@@ -51,3 +51,37 @@ pub async fn delete_remote_branch(
     let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
     branch::delete_remote_branch(&executor, &remote, &branch_name).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn merge_branch(
+    repo_path: String,
+    name: String,
+    no_ff: bool,
+) -> Result<(), String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+    branch::merge_branch(&executor, &name, no_ff).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn rebase_branch(repo_path: String, onto: String) -> Result<(), String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+    branch::rebase_branch(&executor, &onto).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn abort_merge(repo_path: String) -> Result<(), String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+    branch::abort_merge(&executor).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn abort_rebase(repo_path: String) -> Result<(), String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+    branch::abort_rebase(&executor).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn continue_rebase(repo_path: String) -> Result<(), String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+    branch::continue_rebase(&executor).map_err(|e| e.to_string())
+}

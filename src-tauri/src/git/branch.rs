@@ -118,3 +118,59 @@ pub fn delete_remote_branch(executor: &GitExecutor, remote: &str, branch: &str) 
     executor.execute_checked(&["push", remote, "--delete", branch])?;
     Ok(())
 }
+
+pub fn merge_branch(
+    executor: &GitExecutor,
+    name: &str,
+    no_ff: bool,
+) -> Result<(), GitError> {
+    let mut args = vec!["merge", name];
+    if no_ff {
+        args.push("--no-ff");
+    }
+
+    let result = executor.execute(&args)?;
+
+    if result.exit_code != 0 {
+        if result.stderr.contains("CONFLICT") || result.stdout.contains("CONFLICT") {
+            return Err(GitError::MergeConflict);
+        }
+        return Err(GitError::CommandFailed {
+            code: result.exit_code,
+            stderr: result.stderr,
+        });
+    }
+
+    Ok(())
+}
+
+pub fn rebase_branch(executor: &GitExecutor, onto: &str) -> Result<(), GitError> {
+    let result = executor.execute(&["rebase", onto])?;
+
+    if result.exit_code != 0 {
+        if result.stderr.contains("CONFLICT") {
+            return Err(GitError::MergeConflict);
+        }
+        return Err(GitError::CommandFailed {
+            code: result.exit_code,
+            stderr: result.stderr,
+        });
+    }
+
+    Ok(())
+}
+
+pub fn abort_merge(executor: &GitExecutor) -> Result<(), GitError> {
+    executor.execute_checked(&["merge", "--abort"])?;
+    Ok(())
+}
+
+pub fn abort_rebase(executor: &GitExecutor) -> Result<(), GitError> {
+    executor.execute_checked(&["rebase", "--abort"])?;
+    Ok(())
+}
+
+pub fn continue_rebase(executor: &GitExecutor) -> Result<(), GitError> {
+    executor.execute_checked(&["rebase", "--continue"])?;
+    Ok(())
+}

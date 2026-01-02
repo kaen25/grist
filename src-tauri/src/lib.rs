@@ -9,6 +9,7 @@ use commands::{
     create_commit, get_last_commit_message,
     get_commit_log,
     get_branches, create_branch, delete_branch, checkout_branch, rename_branch, delete_remote_branch,
+    merge_branch, rebase_branch, abort_merge, abort_rebase, continue_rebase,
     get_tags, create_tag, delete_tag, delete_remote_tag,
 };
 
@@ -44,6 +45,11 @@ pub fn run() {
             checkout_branch,
             rename_branch,
             delete_remote_branch,
+            merge_branch,
+            rebase_branch,
+            abort_merge,
+            abort_rebase,
+            continue_rebase,
             get_tags,
             create_tag,
             delete_tag,

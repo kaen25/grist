@@ -19,6 +19,13 @@ export interface IGitRepository {
   renameBranch(repoPath: string, oldName: string, newName: string): Promise<void>;
   deleteRemoteBranch(repoPath: string, remote: string, branchName: string): Promise<void>;
 
+  // Merge & Rebase
+  mergeBranch(repoPath: string, name: string, noFf?: boolean): Promise<void>;
+  rebaseBranch(repoPath: string, onto: string): Promise<void>;
+  abortMerge(repoPath: string): Promise<void>;
+  abortRebase(repoPath: string): Promise<void>;
+  continueRebase(repoPath: string): Promise<void>;
+
   // Commits
   getCommits(repoPath: string, limit?: number): Promise<Commit[]>;
   getCommitLog(repoPath: string, count: number, skip: number): Promise<Commit[]>;

@@ -53,6 +53,27 @@ export const tauriGitService: IGitRepository = {
     return invoke('delete_remote_branch', { repoPath, remote, branchName });
   },
 
+  // Merge & Rebase
+  async mergeBranch(repoPath: string, name: string, noFf = false): Promise<void> {
+    return invoke('merge_branch', { repoPath, name, noFf });
+  },
+
+  async rebaseBranch(repoPath: string, onto: string): Promise<void> {
+    return invoke('rebase_branch', { repoPath, onto });
+  },
+
+  async abortMerge(repoPath: string): Promise<void> {
+    return invoke('abort_merge', { repoPath });
+  },
+
+  async abortRebase(repoPath: string): Promise<void> {
+    return invoke('abort_rebase', { repoPath });
+  },
+
+  async continueRebase(repoPath: string): Promise<void> {
+    return invoke('continue_rebase', { repoPath });
+  },
+
   async getCommits(repoPath: string, limit = 100): Promise<Commit[]> {
     return invoke('get_commit_log', { repoPath, count: limit, skip: 0 });
   },
