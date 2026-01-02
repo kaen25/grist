@@ -52,8 +52,11 @@ export function Toolbar() {
   }, [currentRepo]);
 
   useEffect(() => {
-    loadBranches();
-  }, [loadBranches]);
+    if (currentRepo) {
+      loadBranches();
+      refreshStatus(currentRepo.path);
+    }
+  }, [currentRepo?.path]);
 
   const handleCheckout = async (branch: Branch) => {
     if (!currentRepo || branch.is_current || branch.is_remote) return;
