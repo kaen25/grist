@@ -72,6 +72,12 @@ pub fn get_commit_diff(executor: &GitExecutor, hash: &str) -> Result<Vec<FileDif
     parse_multi_diff(&output)
 }
 
+pub fn get_stash_diff(executor: &GitExecutor, index: u32) -> Result<Vec<FileDiff>, GitError> {
+    let stash_ref = format!("stash@{{{}}}", index);
+    let output = executor.execute_checked(&["stash", "show", "-p", &stash_ref])?;
+    parse_multi_diff(&output)
+}
+
 fn parse_diff(output: &str, default_path: &str) -> Result<FileDiff, GitError> {
     let mut diff = FileDiff {
         old_path: None,

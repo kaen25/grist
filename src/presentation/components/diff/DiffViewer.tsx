@@ -27,9 +27,10 @@ interface DiffViewerProps {
   untracked?: boolean;
   onlyEolChanges?: boolean;
   commitHash?: string;
+  stashIndex?: number;
 }
 
-export function DiffViewer({ path, staged = false, untracked = false, onlyEolChanges = false, commitHash }: DiffViewerProps) {
+export function DiffViewer({ path, staged = false, untracked = false, onlyEolChanges = false, commitHash, stashIndex }: DiffViewerProps) {
   const {
     diffMode,
     setDiffMode,
@@ -158,7 +159,11 @@ export function DiffViewer({ path, staged = false, untracked = false, onlyEolCha
       lineSelection.clearSelection();
 
       try {
-        if (commitHash) {
+        if (stashIndex !== undefined) {
+          const diffs = await tauriGitService.getStashDiff(currentRepo.path, stashIndex);
+          const fileDiff = diffs.find((d) => d.new_path === path);
+          setDiff(fileDiff ?? null);
+        } else if (commitHash) {
           const diffs = await tauriGitService.getCommitDiff(currentRepo.path, commitHash);
           const fileDiff = diffs.find((d) => d.new_path === path);
           setDiff(fileDiff ?? null);
@@ -179,7 +184,7 @@ export function DiffViewer({ path, staged = false, untracked = false, onlyEolCha
     }
 
     fetchDiff();
-  }, [path, staged, untracked, onlyEolChanges, commitHash, currentRepo]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [path, staged, untracked, onlyEolChanges, commitHash, stashIndex, currentRepo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Conditional returns after all hooks
   if (loading) {

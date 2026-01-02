@@ -22,19 +22,23 @@ import {
 import { useRepositoryStore } from '@/application/stores';
 import { tauriGitService } from '@/infrastructure/services';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import type { Stash } from '@/domain/entities';
 
 interface StashItemProps {
   stash: Stash;
+  isSelected: boolean;
+  onSelect: () => void;
   onAction: () => void;
 }
 
-export function StashItem({ stash, onAction }: StashItemProps) {
+export function StashItem({ stash, isSelected, onSelect, onAction }: StashItemProps) {
   const { currentRepo } = useRepositoryStore();
   const [isLoading, setIsLoading] = useState(false);
   const [showDropConfirm, setShowDropConfirm] = useState(false);
 
-  const handleApply = async () => {
+  const handleApply = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!currentRepo) return;
     setIsLoading(true);
     try {
@@ -48,7 +52,8 @@ export function StashItem({ stash, onAction }: StashItemProps) {
     }
   };
 
-  const handlePop = async () => {
+  const handlePop = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!currentRepo) return;
     setIsLoading(true);
     try {
@@ -95,7 +100,15 @@ export function StashItem({ stash, onAction }: StashItemProps) {
 
   return (
     <>
-      <div className="flex items-start gap-3 p-3 rounded-lg border group hover:bg-accent/50 transition-colors">
+      <div
+        onClick={onSelect}
+        className={cn(
+          'flex items-start gap-3 p-3 rounded-lg border group cursor-pointer transition-colors',
+          isSelected
+            ? 'bg-accent border-accent-foreground/20'
+            : 'hover:bg-accent/50'
+        )}
+      >
         <Archive className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -118,7 +131,7 @@ export function StashItem({ stash, onAction }: StashItemProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
@@ -154,7 +167,10 @@ export function StashItem({ stash, onAction }: StashItemProps) {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => setShowDropConfirm(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDropConfirm(true);
+                    }}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />

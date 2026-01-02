@@ -20,6 +20,12 @@ pub async fn get_commit_diff(repo_path: String, hash: String) -> Result<Vec<File
 }
 
 #[tauri::command]
+pub async fn get_stash_diff(repo_path: String, index: u32) -> Result<Vec<FileDiff>, String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+    diff::get_stash_diff(&executor, index).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn get_untracked_file_diff(repo_path: String, file_path: String) -> Result<FileDiff, String> {
     let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
     diff::get_untracked_file_diff(&executor, &file_path).map_err(|e| e.to_string())
