@@ -682,4 +682,32 @@ case 'branches':
 
 ---
 
-## Progression: 9/9
+## Tâche 11.10: Améliorations UI branches et toolbar
+
+**Commits**:
+- `style: filled green badge with white text for current branch (HEAD)`
+- `feat: add refresh button next to branch selector in toolbar`
+- `fix: refresh toolbar branch display after context menu checkout`
+- `fix: refresh branch and status when repository changes`
+
+**Fichiers**:
+- `src/presentation/components/history/CommitItem.tsx`
+- `src/presentation/components/layout/Toolbar.tsx`
+- `src/presentation/components/layout/Sidebar.tsx`
+- `src/presentation/components/history/HistoryView.tsx`
+- `src/application/stores/repository.store.ts`
+- `src/application/hooks/useHistory.ts`
+- `vite.config.ts`
+
+**Actions**:
+- [x] Badge rempli vert avec texte blanc pour la branche courante (HEAD)
+- [x] Icône GitBranch au lieu de Clock pour la vue History
+- [x] Bouton refresh dans la toolbar (rafraîchit branches, status, commits)
+- [x] Synchronisation du refresh via `triggerRefresh` dans le store
+- [x] Correction de l'affichage branche après checkout depuis context menu
+- [x] Correction de l'affichage branche lors du changement de repo
+- [x] Code splitting pour réduire la taille des chunks (546 kB → 386 kB)
+
+---
+
+## Progression: 10/10
