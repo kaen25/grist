@@ -64,9 +64,9 @@ export interface IRemoteRepository {
 
 ---
 
-## Tâche 13.1: Commandes remotes (backend)
+## Tâche 13.1: Commandes remotes (backend) ✅
 
-**Commit**: `feat: add remote commands`
+**Commit**: `feat: add remote commands (fetch, pull, push)`
 
 **Fichiers**:
 - `src-tauri/src/git/remote.rs`
@@ -75,7 +75,7 @@ export interface IRemoteRepository {
 - `src-tauri/src/commands/mod.rs` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src-tauri/src/git/remote.rs`:
+- [x] Créer `src-tauri/src/git/remote.rs`:
 ```rust
 use crate::git::error::GitError;
 use crate::git::executor::GitExecutor;
@@ -189,8 +189,8 @@ pub fn push(
     Ok(())
 }
 ```
-- [ ] Ajouter `pub mod remote;` dans `src-tauri/src/git/mod.rs`
-- [ ] Créer `src-tauri/src/commands/remote.rs`:
+- [x] Ajouter `pub mod remote;` dans `src-tauri/src/git/mod.rs`
+- [x] Créer `src-tauri/src/commands/remote.rs`:
 ```rust
 use crate::git::{executor::GitExecutor, remote, types::Remote};
 
@@ -246,12 +246,12 @@ pub async fn push_remote(
         .map_err(|e| e.to_string())
 }
 ```
-- [ ] Ajouter `pub mod remote;` dans `src-tauri/src/commands/mod.rs`
-- [ ] Ajouter les commandes au `generate_handler![]`
+- [x] Ajouter `pub mod remote;` dans `src-tauri/src/commands/mod.rs`
+- [x] Ajouter les commandes au `generate_handler![]`
 
 ---
 
-## Tâche 13.2: GitService frontend (remotes)
+## Tâche 13.2: GitService frontend (remotes) ✅
 
 **Commit**: `feat: add remote methods to GitService`
 
@@ -259,7 +259,7 @@ pub async fn push_remote(
 - `src/services/git/index.ts` (mise à jour)
 
 **Actions**:
-- [ ] Ajouter dans `src/services/git/index.ts`:
+- [x] Ajouter dans `src/infrastructure/services/tauri-git.service.ts`:
 ```typescript
 async getRemotes(): Promise<Remote[]> {
   return invoke('get_remotes', { repoPath: this.repoPath });
@@ -288,9 +288,9 @@ async push(remote?: string, branch?: string, force: boolean = false): Promise<vo
 
 ---
 
-## Tâche 13.3: Créer RemotesView
+## Tâche 13.3: Créer RemotesView ✅
 
-**Commit**: `feat: add RemotesView component`
+**Commit**: `feat: add remote management UI components`
 
 **Fichiers**:
 - `src/components/remotes/RemotesView.tsx`
@@ -298,8 +298,8 @@ async push(remote?: string, branch?: string, force: boolean = false): Promise<vo
 - `src/components/remotes/index.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/components/remotes/`
-- [ ] Créer `src/components/remotes/RemotesView.tsx`:
+- [x] Créer le dossier `src/presentation/components/remotes/`
+- [x] Créer `src/presentation/components/remotes/RemotesView.tsx`:
 ```typescript
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
@@ -353,7 +353,7 @@ export function RemotesView() {
   );
 }
 ```
-- [ ] Créer `src/components/remotes/RemoteList.tsx`:
+- [x] Créer `src/presentation/components/remotes/RemoteList.tsx` (intégré dans RemotesView):
 ```typescript
 import { Globe, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -423,19 +423,19 @@ export function RemoteList({ remotes, onRefresh }: RemoteListProps) {
   );
 }
 ```
-- [ ] Créer `src/components/remotes/index.ts`
+- [x] Créer `src/presentation/components/remotes/index.ts`
 
 ---
 
-## Tâche 13.4: Créer PushDialog
+## Tâche 13.4: Créer PushDialog ✅
 
 **Commit**: `feat: add PushDialog`
 
 **Fichiers**:
-- `src/components/remotes/PushDialog.tsx`
+- `src/presentation/components/remotes/PushDialog.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/remotes/PushDialog.tsx`:
+- [x] Créer `src/presentation/components/remotes/PushDialog.tsx`:
 ```typescript
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
@@ -538,15 +538,15 @@ export function PushDialog({ open, onOpenChange, onPushed }: PushDialogProps) {
 
 ---
 
-## Tâche 13.5: Créer PullDialog
+## Tâche 13.5: Créer PullDialog ✅
 
 **Commit**: `feat: add PullDialog`
 
 **Fichiers**:
-- `src/components/remotes/PullDialog.tsx`
+- `src/presentation/components/remotes/PullDialog.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/remotes/PullDialog.tsx`:
+- [x] Créer `src/presentation/components/remotes/PullDialog.tsx`:
 ```typescript
 import { useState } from 'react';
 import {
@@ -637,15 +637,15 @@ export function PullDialog({ open, onOpenChange, onPulled }: PullDialogProps) {
 
 ---
 
-## Tâche 13.6: Intégrer dans Toolbar
+## Tâche 13.6: Intégrer dans Toolbar ✅
 
-**Commit**: `feat: add fetch/pull/push to toolbar`
+**Commit**: `feat: integrate remote operations in UI`
 
 **Fichiers**:
-- `src/components/layout/Toolbar.tsx` (mise à jour)
+- `src/presentation/components/layout/Toolbar.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Mettre à jour `Toolbar.tsx`:
+- [x] Mettre à jour `Toolbar.tsx`:
 ```typescript
 import { useState } from 'react';
 import { PushDialog } from '@/components/remotes/PushDialog';
@@ -718,4 +718,4 @@ const handleFetch = async () => {
 
 ---
 
-## Progression: 0/6
+## Progression: 6/6 ✅

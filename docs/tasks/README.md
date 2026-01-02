@@ -26,12 +26,12 @@ Client GUI Git desktop (style GitExtensions) avec:
 | 10 | [phase-10-graph.md](./phase-10-graph.md) | ✅ 4/4 | Graph SVG des branches |
 | 11 | [phase-11-branches.md](./phase-11-branches.md) | ✅ 10/10 | CRUD branches, context menu, UI |
 | 12 | [phase-12-merge-rebase.md](./phase-12-merge-rebase.md) | ✅ 4/4 | Merge, rebase, conflits |
-| 13 | [phase-13-remotes.md](./phase-13-remotes.md) | ⬜ 0/6 | Fetch, pull, push |
+| 13 | [phase-13-remotes.md](./phase-13-remotes.md) | ✅ 6/6 | Fetch, pull, push, SSH key mgmt |
 | 14 | [phase-14-stash.md](./phase-14-stash.md) | ⬜ 0/4 | Stash operations |
 | 15 | [phase-15-cherry-revert.md](./phase-15-cherry-revert.md) | ⬜ 0/2 | Cherry-pick, revert |
 | 16 | [phase-16-settings.md](./phase-16-settings.md) | ⬜ 0/4 | Settings, raccourcis |
 
-**Total: 70/84 tâches (83%)**
+**Total: 76/84 tâches (90%)**
 
 ---
 
