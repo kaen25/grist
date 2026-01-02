@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type ViewType = 'status' | 'history' | 'branches' | 'stash' | 'settings';
+export type ViewType = 'status' | 'history' | 'branches' | 'remotes' | 'stash' | 'settings';
 export type DiffMode = 'unified' | 'split';
 
 interface UIState {

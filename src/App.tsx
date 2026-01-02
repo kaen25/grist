@@ -2,6 +2,7 @@ import { AppLayout } from '@/presentation/components/layout';
 import { StatusView } from '@/presentation/components/status';
 import { HistoryView } from '@/presentation/components/history';
 import { BranchesView } from '@/presentation/components/branches';
+import { RemotesView } from '@/presentation/components/remotes';
 import { useUIStore } from '@/application/stores';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -38,6 +39,8 @@ function App() {
         return <HistoryView />;
       case 'branches':
         return <BranchesView />;
+      case 'remotes':
+        return <RemotesView />;
       case 'stash':
         return <StashView />;
       case 'settings':

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   RefreshCw,
   ArrowDown,
@@ -9,6 +9,7 @@ import {
   ChevronDown,
   GitBranch,
   Check,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -25,6 +26,7 @@ import { useRepositoryStore } from '@/application/stores';
 import { useGitService } from '@/application/hooks';
 import { useTheme } from '@/presentation/providers';
 import { RepositorySelector } from '@/presentation/components/repository';
+import { PushDialog, PullDialog, SshUnlockDialog, isSshKeyLockedError } from '@/presentation/components/remotes';
 import { tauriGitService } from '@/infrastructure/services';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -37,6 +39,14 @@ export function Toolbar() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [showPushDialog, setShowPushDialog] = useState(false);
+  const [showPullDialog, setShowPullDialog] = useState(false);
+
+  // SSH Key unlock state
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false);
+  const [lockedKeyPath, setLockedKeyPath] = useState<string | null>(null);
+  const pendingOperationRef = useRef<(() => Promise<void>) | null>(null);
 
   const loadBranches = useCallback(async () => {
     if (!currentRepo) return;
@@ -73,6 +83,48 @@ export function Toolbar() {
     }
   };
 
+  // Helper to handle SSH key locked errors
+  const handleSshKeyLocked = (error: unknown, retryOperation: () => Promise<void>) => {
+    const keyPath = isSshKeyLockedError(error);
+    if (keyPath) {
+      setLockedKeyPath(keyPath);
+      pendingOperationRef.current = retryOperation;
+      setShowUnlockDialog(true);
+      return true;
+    }
+    return false;
+  };
+
+  const handleUnlockSuccess = async () => {
+    if (pendingOperationRef.current) {
+      const operation = pendingOperationRef.current;
+      pendingOperationRef.current = null;
+      await operation();
+    }
+  };
+
+  const handleFetch = async () => {
+    if (!currentRepo) return;
+    setIsFetching(true);
+    try {
+      await tauriGitService.fetch(currentRepo.path, undefined, true);
+      toast.success('Fetch successful');
+      triggerRefresh();
+      await Promise.all([loadBranches(), refreshStatus(currentRepo.path)]);
+    } catch (error) {
+      if (!handleSshKeyLocked(error, handleFetch)) {
+        toast.error(`Fetch failed: ${error}`);
+      }
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  const handleRemoteSuccess = async () => {
+    triggerRefresh();
+    await loadBranches();
+  };
+
   const localBranches = branches.filter((b) => !b.is_remote);
   const currentBranch = branches.find((b) => b.is_current);
   const currentBranchName = status?.branch ?? currentRepo?.branch ?? 'No branch';
@@ -83,17 +135,32 @@ export function Toolbar() {
 
       <Separator orientation="vertical" className="h-6" />
 
-      <Button variant="ghost" size="sm" disabled={!currentRepo}>
-        <RefreshCw className={cn('mr-2 h-4 w-4', isRefreshing && 'animate-spin')} />
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={!currentRepo || isFetching}
+        onClick={handleFetch}
+      >
+        <Download className={cn('mr-2 h-4 w-4', isFetching && 'animate-pulse')} />
         Fetch
       </Button>
 
-      <Button variant="ghost" size="sm" disabled={!currentRepo}>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={!currentRepo}
+        onClick={() => setShowPullDialog(true)}
+      >
         <ArrowDown className="mr-2 h-4 w-4" />
         Pull
       </Button>
 
-      <Button variant="ghost" size="sm" disabled={!currentRepo}>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={!currentRepo}
+        onClick={() => setShowPushDialog(true)}
+      >
         <ArrowUp className="mr-2 h-4 w-4" />
         Push
       </Button>
@@ -227,6 +294,30 @@ export function Toolbar() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <PushDialog
+        open={showPushDialog}
+        onOpenChange={setShowPushDialog}
+        onSuccess={handleRemoteSuccess}
+      />
+
+      <PullDialog
+        open={showPullDialog}
+        onOpenChange={setShowPullDialog}
+        onSuccess={handleRemoteSuccess}
+      />
+
+      {lockedKeyPath && (
+        <SshUnlockDialog
+          open={showUnlockDialog}
+          onOpenChange={setShowUnlockDialog}
+          keyPath={lockedKeyPath}
+          onUnlocked={handleUnlockSuccess}
+          onCancelled={() => {
+            pendingOperationRef.current = null;
+          }}
+        />
+      )}
     </header>
   );
 }
