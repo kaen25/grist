@@ -57,7 +57,7 @@ export interface IStashRepository {
 
 ---
 
-## Tâche 14.1: Commandes stash (backend)
+## Tâche 14.1: Commandes stash (backend) ✅
 
 **Commit**: `feat: add stash commands`
 
@@ -68,7 +68,7 @@ export interface IStashRepository {
 - `src-tauri/src/commands/mod.rs` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src-tauri/src/git/stash.rs`:
+- [x] Créer `src-tauri/src/git/stash.rs`:
 ```rust
 use crate::git::error::GitError;
 use crate::git::executor::GitExecutor;
@@ -156,8 +156,8 @@ pub fn drop_stash(executor: &GitExecutor, index: u32) -> Result<(), GitError> {
     Ok(())
 }
 ```
-- [ ] Ajouter `pub mod stash;` dans `src-tauri/src/git/mod.rs`
-- [ ] Créer `src-tauri/src/commands/stash.rs`:
+- [x] Ajouter `pub mod stash;` dans `src-tauri/src/git/mod.rs`
+- [x] Créer `src-tauri/src/commands/stash.rs`:
 ```rust
 use crate::git::{executor::GitExecutor, stash, types::Stash};
 
@@ -196,12 +196,12 @@ pub async fn drop_stash(repo_path: String, index: u32) -> Result<(), String> {
     stash::drop_stash(&executor, index).map_err(|e| e.to_string())
 }
 ```
-- [ ] Ajouter `pub mod stash;` dans `src-tauri/src/commands/mod.rs`
-- [ ] Ajouter les commandes au `generate_handler![]`
+- [x] Ajouter `pub mod stash;` dans `src-tauri/src/commands/mod.rs`
+- [x] Ajouter les commandes au `generate_handler![]`
 
 ---
 
-## Tâche 14.2: Créer StashView
+## Tâche 14.2: Créer StashView ✅
 
 **Commit**: `feat: add StashView component`
 
@@ -213,8 +213,8 @@ pub async fn drop_stash(repo_path: String, index: u32) -> Result<(), String> {
 - `src/services/git/index.ts` (mise à jour)
 
 **Actions**:
-- [ ] Créer le dossier `src/components/stash/`
-- [ ] Ajouter dans `src/services/git/index.ts`:
+- [x] Créer le dossier `src/presentation/components/stash/`
+- [x] Ajouter dans `src/infrastructure/services/tauri-git.service.ts`:
 ```typescript
 async getStashes(): Promise<Stash[]> {
   return invoke('get_stashes', { repoPath: this.repoPath });
@@ -240,7 +240,7 @@ async dropStash(index: number): Promise<void> {
   return invoke('drop_stash', { repoPath: this.repoPath, index });
 }
 ```
-- [ ] Créer `src/components/stash/StashView.tsx`:
+- [x] Créer `src/presentation/components/stash/StashView.tsx`:
 ```typescript
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
@@ -294,12 +294,12 @@ export function StashView() {
   );
 }
 ```
-- [ ] Créer `src/components/stash/StashList.tsx` et `StashItem.tsx`
-- [ ] Créer `src/components/stash/index.ts`
+- [x] Créer `src/presentation/components/stash/StashList.tsx` et `StashItem.tsx`
+- [x] Créer `src/presentation/components/stash/index.ts`
 
 ---
 
-## Tâche 14.3: Actions stash
+## Tâche 14.3: Actions stash ✅
 
 **Commit**: `feat: add stash actions`
 
@@ -307,7 +307,7 @@ export function StashView() {
 - `src/components/stash/StashItem.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/stash/StashItem.tsx`:
+- [x] Créer `src/presentation/components/stash/StashItem.tsx`:
 ```typescript
 import { Archive, Play, Trash2, Copy, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -416,15 +416,15 @@ export function StashItem({ stash, onAction }: StashItemProps) {
 
 ---
 
-## Tâche 14.4: Créer CreateStashDialog
+## Tâche 14.4: Créer CreateStashDialog ✅
 
-**Commit**: `feat: add CreateStashDialog`
+**Commit**: `feat: add stash UI components`
 
 **Fichiers**:
 - `src/components/stash/CreateStashDialog.tsx`
 
 **Actions**:
-- [ ] Créer `src/components/stash/CreateStashDialog.tsx`:
+- [x] Créer `src/presentation/components/stash/CreateStashDialog.tsx`:
 ```typescript
 import { useState } from 'react';
 import {
@@ -522,9 +522,9 @@ export function CreateStashDialog({
   );
 }
 ```
-- [ ] Mettre à jour `src/App.tsx`:
+- [x] Mettre à jour `src/App.tsx`:
 ```typescript
-import { StashView } from '@/components/stash';
+import { StashView } from '@/presentation/components/stash';
 
 case 'stash':
   return <StashView />;
@@ -532,4 +532,4 @@ case 'stash':
 
 ---
 
-## Progression: 0/4
+## Progression: 4/4 ✅
