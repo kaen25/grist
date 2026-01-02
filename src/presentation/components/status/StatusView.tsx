@@ -24,15 +24,17 @@ import {
 } from '@/components/ui/alert-dialog';
 import { FileTree } from './FileTree';
 import { SelectionActionBar } from './SelectionActionBar';
+import { ConflictBanner } from './ConflictBanner';
 import { DiffViewer } from '../diff';
 import { CommitPanel } from '../commit';
 import { useRepositoryStore, useUIStore } from '@/application/stores';
-import { useGitStatus, useStagingActions } from '@/application/hooks';
+import { useGitStatus, useStagingActions, useGitService } from '@/application/hooks';
 
 export function StatusView() {
-  const { status } = useRepositoryStore();
+  const { currentRepo, status } = useRepositoryStore();
   const { selectedFiles, hideEolOnlyFiles, toggleHideEolOnlyFiles } = useUIStore();
   const { discardChanges } = useStagingActions();
+  const { refreshStatus } = useGitService();
 
   const [discardDialog, setDiscardDialog] = useState<{
     open: boolean;
@@ -92,9 +94,17 @@ export function StatusView() {
     setDiscardDialog({ open: false, path: '', isUntracked: false });
   };
 
+  const handleConflictResolved = () => {
+    if (currentRepo) {
+      refreshStatus(currentRepo.path);
+    }
+  };
+
   return (
     <>
-      <ResizablePanelGroup className="h-full">
+      <div className="flex flex-col h-full">
+        <ConflictBanner onResolved={handleConflictResolved} />
+        <ResizablePanelGroup className="h-full flex-1 min-h-0">
         {/* Left panel: File lists */}
         <ResizablePanel defaultSize={30} minSize={20}>
           <div className="flex flex-col h-full overflow-hidden">
@@ -202,6 +212,7 @@ export function StatusView() {
           )}
         </ResizablePanel>
       </ResizablePanelGroup>
+      </div>
 
       <AlertDialog
         open={discardDialog.open}
