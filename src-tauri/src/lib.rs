@@ -17,6 +17,7 @@ use commands::{
     get_remote_auth_config, set_remote_auth_config, remove_remote_auth_config,
     check_ssh_key, convert_ssh_key, get_converted_key_path_cmd,
     ssh_key_needs_unlock, ssh_key_is_unlocked, ssh_key_unlock, ssh_key_lock, ssh_keys_lock_all,
+    get_stashes, create_stash, apply_stash, pop_stash, drop_stash, clear_stashes,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -80,7 +81,13 @@ pub fn run() {
             ssh_key_is_unlocked,
             ssh_key_unlock,
             ssh_key_lock,
-            ssh_keys_lock_all
+            ssh_keys_lock_all,
+            get_stashes,
+            create_stash,
+            apply_stash,
+            pop_stash,
+            drop_stash,
+            clear_stashes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

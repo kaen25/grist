@@ -9,3 +9,4 @@ pub mod log;
 pub mod branch;
 pub mod tag;
 pub mod remote;
+pub mod stash;

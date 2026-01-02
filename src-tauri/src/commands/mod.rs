@@ -8,6 +8,7 @@ pub mod tag;
 pub mod remote;
 pub mod config;
 pub mod keys;
+pub mod stash;
 
 pub use repository::*;
 pub use status::*;
@@ -19,3 +20,4 @@ pub use tag::*;
 pub use remote::*;
 pub use config::*;
 pub use keys::*;
+pub use stash::*;
