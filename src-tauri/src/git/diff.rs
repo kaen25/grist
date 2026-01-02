@@ -68,7 +68,9 @@ pub fn get_file_diff(
 }
 
 pub fn get_commit_diff(executor: &GitExecutor, hash: &str) -> Result<Vec<FileDiff>, GitError> {
-    let output = executor.execute_checked(&["show", "--format=", hash])?;
+    // Use --first-parent to handle merge commits (including stashes) properly
+    // Without it, merge commits show combined diff format which our parser doesn't handle
+    let output = executor.execute_checked(&["show", "--format=", "--first-parent", hash])?;
     parse_multi_diff(&output)
 }
 
