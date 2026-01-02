@@ -1,1 +1,1 @@
-export type { IGitRepository } from './git.repository';
+export type { IGitRepository, RemoteAuthConfig, AuthType, SshKeyInfo } from './git.repository';

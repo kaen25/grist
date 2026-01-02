@@ -1,6 +1,21 @@
 import type { Repository, Branch, Commit, Remote, Stash, Tag } from '@/domain/entities';
 import type { GitStatus, FileDiff } from '@/domain/value-objects';
 
+export type AuthType = 'ssh-agent' | 'ssh-key' | 'none';
+
+export interface RemoteAuthConfig {
+  auth_type: AuthType;
+  ssh_key_path?: string;
+}
+
+export interface SshKeyInfo {
+  path: string;
+  format: 'ppk' | 'openssh' | 'pem' | 'unknown';
+  encrypted: boolean;
+  needs_conversion: boolean;
+  ppk_version?: 'v2' | 'v3';
+}
+
 export interface IGitRepository {
   // Repository
   getVersion(): Promise<string>;
@@ -25,6 +40,31 @@ export interface IGitRepository {
   abortMerge(repoPath: string): Promise<void>;
   abortRebase(repoPath: string): Promise<void>;
   continueRebase(repoPath: string): Promise<void>;
+
+  // Remotes
+  addRemote(repoPath: string, name: string, url: string): Promise<void>;
+  removeRemote(repoPath: string, name: string): Promise<void>;
+  fetch(repoPath: string, remote?: string, prune?: boolean, sshKeyPath?: string): Promise<void>;
+  pull(repoPath: string, remote?: string, branch?: string, rebase?: boolean, sshKeyPath?: string): Promise<void>;
+  push(repoPath: string, remote?: string, branch?: string, force?: boolean, setUpstream?: boolean, sshKeyPath?: string): Promise<void>;
+  testRemoteConnection(repoPath: string, remote: string, sshKeyPath?: string): Promise<void>;
+
+  // Remote Auth Config
+  getRemoteAuthConfig(repoPath: string, remoteName: string): Promise<RemoteAuthConfig>;
+  setRemoteAuthConfig(repoPath: string, remoteName: string, config: RemoteAuthConfig): Promise<void>;
+  removeRemoteAuthConfig(repoPath: string, remoteName: string): Promise<void>;
+
+  // SSH Key Conversion
+  checkSshKey(path: string): Promise<SshKeyInfo>;
+  convertSshKey(sourcePath: string, passphrase?: string): Promise<string>;
+  getConvertedKeyPath(sourcePath: string): Promise<string | null>;
+
+  // SSH Key Session Management (passphrase caching)
+  sshKeyNeedsUnlock(keyPath: string): Promise<boolean>;
+  sshKeyIsUnlocked(keyPath: string): Promise<boolean>;
+  sshKeyUnlock(keyPath: string, passphrase: string): Promise<void>;
+  sshKeyLock(keyPath: string): Promise<void>;
+  sshKeysLockAll(): Promise<void>;
 
   // Commits
   getCommits(repoPath: string, limit?: number): Promise<Commit[]>;

@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { IGitRepository } from '@/domain/interfaces';
+import type { IGitRepository, RemoteAuthConfig, SshKeyInfo } from '@/domain/interfaces';
 import type { Repository, Branch, Commit, Remote, Stash, Tag } from '@/domain/entities';
 import type { GitStatus, FileDiff } from '@/domain/value-objects';
 
@@ -84,6 +84,77 @@ export const tauriGitService: IGitRepository = {
 
   async getRemotes(repoPath: string): Promise<Remote[]> {
     return invoke('get_remotes', { repoPath });
+  },
+
+  async addRemote(repoPath: string, name: string, url: string): Promise<void> {
+    return invoke('add_remote', { repoPath, name, url });
+  },
+
+  async removeRemote(repoPath: string, name: string): Promise<void> {
+    return invoke('remove_remote', { repoPath, name });
+  },
+
+  async fetch(repoPath: string, remote?: string, prune = false, sshKeyPath?: string): Promise<void> {
+    return invoke('fetch_remote', { repoPath, remote, prune, sshKeyPath });
+  },
+
+  async pull(repoPath: string, remote?: string, branch?: string, rebase = false, sshKeyPath?: string): Promise<void> {
+    return invoke('pull_remote', { repoPath, remote, branch, rebase, sshKeyPath });
+  },
+
+  async push(repoPath: string, remote?: string, branch?: string, force = false, setUpstream = false, sshKeyPath?: string): Promise<void> {
+    return invoke('push_remote', { repoPath, remote, branch, force, setUpstream, sshKeyPath });
+  },
+
+  async testRemoteConnection(repoPath: string, remote: string, sshKeyPath?: string): Promise<void> {
+    return invoke('test_remote_connection', { repoPath, remote, sshKeyPath });
+  },
+
+  // Remote Auth Config
+  async getRemoteAuthConfig(repoPath: string, remoteName: string): Promise<RemoteAuthConfig> {
+    return invoke('get_remote_auth_config', { repoPath, remoteName });
+  },
+
+  async setRemoteAuthConfig(repoPath: string, remoteName: string, config: RemoteAuthConfig): Promise<void> {
+    return invoke('set_remote_auth_config', { repoPath, remoteName, config });
+  },
+
+  async removeRemoteAuthConfig(repoPath: string, remoteName: string): Promise<void> {
+    return invoke('remove_remote_auth_config', { repoPath, remoteName });
+  },
+
+  // SSH Key Conversion
+  async checkSshKey(path: string): Promise<SshKeyInfo> {
+    return invoke('check_ssh_key', { path });
+  },
+
+  async convertSshKey(sourcePath: string, passphrase?: string): Promise<string> {
+    return invoke('convert_ssh_key', { sourcePath, passphrase });
+  },
+
+  async getConvertedKeyPath(sourcePath: string): Promise<string | null> {
+    return invoke('get_converted_key_path_cmd', { sourcePath });
+  },
+
+  // SSH Key Session Management
+  async sshKeyNeedsUnlock(keyPath: string): Promise<boolean> {
+    return invoke('ssh_key_needs_unlock', { keyPath });
+  },
+
+  async sshKeyIsUnlocked(keyPath: string): Promise<boolean> {
+    return invoke('ssh_key_is_unlocked', { keyPath });
+  },
+
+  async sshKeyUnlock(keyPath: string, passphrase: string): Promise<void> {
+    return invoke('ssh_key_unlock', { keyPath, passphrase });
+  },
+
+  async sshKeyLock(keyPath: string): Promise<void> {
+    return invoke('ssh_key_lock', { keyPath });
+  },
+
+  async sshKeysLockAll(): Promise<void> {
+    return invoke('ssh_keys_lock_all');
   },
 
   async getStashes(repoPath: string): Promise<Stash[]> {
