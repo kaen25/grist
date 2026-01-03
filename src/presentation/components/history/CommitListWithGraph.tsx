@@ -4,6 +4,7 @@ import { CommitItem } from './CommitItem';
 import { calculateGraphLayout, type GraphNode, type GraphEdge } from './graphLayout';
 import type { Commit } from '@/domain/entities';
 import './CommitListWithGraph.css';
+import { GRAPH_PADDING, GRAPH_COLUMN_WIDTH, GRAPH_ROW_HEIGHT, GRAPH_LINE_WIDTH, GRAPH_NODE_RADIUS_MERGE, GRAPH_NODE_RADIUS, GRAPH_CORNER_RADIUS } from '@/settings';
 
 interface CommitListWithGraphProps {
   commits: Commit[];
@@ -16,28 +17,15 @@ interface CommitListWithGraphProps {
 }
 
 // =============================================================================
-// Constants
-// =============================================================================
-
-const ROW_HEIGHT = 32;
-const COLUMN_WIDTH = 18;
-const NODE_RADIUS = 4;
-const NODE_RADIUS_MERGE = 5;
-const GRAPH_PADDING = 10;
-const LINE_WIDTH = 1.5;
-
-// =============================================================================
 // SVG Path Helpers
 // =============================================================================
 
 function getNodeCenter(row: number, column: number): { x: number; y: number } {
   return {
-    x: GRAPH_PADDING + column * COLUMN_WIDTH + COLUMN_WIDTH / 2,
-    y: row * ROW_HEIGHT + ROW_HEIGHT / 2,
+    x: GRAPH_PADDING + column * GRAPH_COLUMN_WIDTH + GRAPH_COLUMN_WIDTH / 2,
+    y: row * GRAPH_ROW_HEIGHT + GRAPH_ROW_HEIGHT / 2,
   };
 }
-
-const CORNER_RADIUS = 6;
 
 function createEdgePath(edge: GraphEdge): string {
   const from = getNodeCenter(edge.fromRow, edge.fromColumn);
@@ -49,12 +37,12 @@ function createEdgePath(edge: GraphEdge): string {
   }
 
   // 90-degree angle path with rounded corners
-  const r = CORNER_RADIUS;
+  const r = GRAPH_CORNER_RADIUS;
   const goingRight = to.x > from.x;
   const dx = goingRight ? 1 : -1;
 
   // Corner is positioned just below the source commit
-  const cornerY = from.y + ROW_HEIGHT / 2;
+  const cornerY = from.y + GRAPH_ROW_HEIGHT / 2;
 
   // Path: down -> rounded corner -> horizontal -> rounded corner -> down
   return [
@@ -84,7 +72,7 @@ export function CommitListWithGraph({
 
   // Calculate graph layout
   const layout = useMemo(() => calculateGraphLayout(commits), [commits]);
-  const graphWidth = (layout.maxColumn + 1) * COLUMN_WIDTH + GRAPH_PADDING * 2;
+  const graphWidth = (layout.maxColumn + 1) * GRAPH_COLUMN_WIDTH + GRAPH_PADDING * 2;
 
   // Build lookup maps for quick access
   const nodeByRow = useMemo(() => {
@@ -96,7 +84,7 @@ export function CommitListWithGraph({
   const virtualizer = useVirtualizer({
     count: commits.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => GRAPH_ROW_HEIGHT,
     overscan: 15,
   });
 
@@ -158,7 +146,7 @@ export function CommitListWithGraph({
                 className="graph-edge"
                 d={createEdgePath(edge)}
                 stroke={edge.color}
-                strokeWidth={LINE_WIDTH}
+                strokeWidth={GRAPH_LINE_WIDTH}
                 fill="none"
                 strokeLinecap="round"
                 opacity={0.8}
@@ -174,7 +162,7 @@ export function CommitListWithGraph({
 
               const { x, y } = getNodeCenter(node.row, node.column);
               const isSelected = node.commit.hash === selectedHash;
-              const radius = node.isMerge ? NODE_RADIUS_MERGE : NODE_RADIUS;
+              const radius = node.isMerge ? GRAPH_NODE_RADIUS_MERGE : GRAPH_NODE_RADIUS;
 
               return (
                 <g

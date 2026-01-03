@@ -1,14 +1,12 @@
 import { useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { SUBJECT_LIMIT, SUBJECT_WARNING } from '@/settings';
 
 interface CommitMessageEditorProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
 }
-
-const SUBJECT_LIMIT = 72;
-const SUBJECT_WARNING = 50;
 
 export function CommitMessageEditor({
   value,

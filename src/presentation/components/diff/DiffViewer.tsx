@@ -18,8 +18,7 @@ import { useUIStore, useRepositoryStore } from '@/application/stores';
 import { useDiffLineSelection } from '@/application/hooks';
 import { tauriGitService } from '@/infrastructure/services';
 import type { FileDiff } from '@/domain/value-objects';
-
-const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico', '.bmp', '.tiff', '.tif'];
+import { IMAGE_EXTENSIONS } from '@/settings';
 
 interface DiffViewerProps {
   path: string;

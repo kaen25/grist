@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { tauriGitService } from '@/infrastructure/services';
 import { useRepositoryStore } from '@/application/stores';
-
-const PAGE_SIZE = 100;
+import { PAGE_SIZE } from '@/settings';
 
 export function useHistory() {
   const { currentRepo, commits, setCommits } = useRepositoryStore();

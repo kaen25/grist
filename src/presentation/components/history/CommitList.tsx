@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { CommitItem } from './CommitItem';
 import type { Commit } from '@/domain/entities';
+import { ROW_HEIGHT } from '@/settings';
 
 interface CommitListProps {
   commits: Commit[];
@@ -13,8 +14,6 @@ interface CommitListProps {
   onVisibleRangeChange?: (range: { start: number; end: number }) => void;
   scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
-
-export const ROW_HEIGHT = 64;
 
 export function CommitList({
   commits,

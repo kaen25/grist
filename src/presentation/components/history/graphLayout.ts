@@ -1,4 +1,5 @@
 import type { Commit } from '@/domain/entities';
+import { BRANCH_COLORS } from '@/settings';
 
 // =============================================================================
 // Types
@@ -27,25 +28,6 @@ export interface GraphLayout {
   edges: GraphEdge[];
   maxColumn: number;
 }
-
-// =============================================================================
-// Color Palette
-// =============================================================================
-
-const BRANCH_COLORS = [
-  '#3b82f6', // blue
-  '#22c55e', // green
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#8b5cf6', // violet
-  '#06b6d4', // cyan
-  '#ec4899', // pink
-  '#f97316', // orange
-  '#84cc16', // lime
-  '#14b8a6', // teal
-  '#a855f7', // purple
-  '#6366f1', // indigo
-];
 
 export function getColumnColor(column: number): string {
   return BRANCH_COLORS[column % BRANCH_COLORS.length];
