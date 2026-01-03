@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRepositoryStore } from '@/application/stores';
-import { useGitService } from '@/application/hooks';
+import { useGitService, useLoading, useToggle } from '@/application/hooks';
 import { useTheme } from '@/presentation/providers';
 import { RepositorySelector } from '@/presentation/components/repository';
 import { PushDialog, PullDialog, SshUnlockDialog, isSshKeyLockedError } from '@/presentation/components/remotes';
@@ -37,17 +37,18 @@ export function Toolbar() {
   const { refreshStatus } = useGitService();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [showPushDialog, setShowPushDialog] = useState(false);
-  const [showPullDialog, setShowPullDialog] = useState(false);
+  //const [isLoadingBranches, setIsLoadingBranches] = useToggle();
+  //const [isCheckingOut, setIsCheckingOut] = useToggle();
+  //const [isFetching, setIsFetching] = useToggle();
+  const [showPushDialog, setShowPushDialog] = useToggle();
+  const [showPullDialog, setShowPullDialog] = useToggle();
 
   // SSH Key unlock state
-  const [showUnlockDialog, setShowUnlockDialog] = useState(false);
+  const [showUnlockDialog, setShowUnlockDialog] = useToggle();
   const [lockedKeyPath, setLockedKeyPath] = useState<string | null>(null);
   const pendingOperationRef = useRef<(() => Promise<void>) | null>(null);
 
+  /*
   const loadBranches = useCallback(async () => {
     if (!currentRepo) return;
     setIsLoadingBranches(true);
@@ -60,6 +61,17 @@ export function Toolbar() {
       setIsLoadingBranches(false);
     }
   }, [currentRepo]);
+  */
+
+  const [loadBranches, isLoadingBranches] = useLoading(async () => {
+      if (!currentRepo) return;
+      const loadedBranches = await tauriGitService.getBranches(currentRepo.path);
+      setBranches(loadedBranches);
+    },
+    (error) => {
+      console.error('Failed to load branches:', error);
+    }
+  );
 
   useEffect(() => {
     if (currentRepo) {
@@ -68,6 +80,7 @@ export function Toolbar() {
     }
   }, [currentRepo?.path]);
 
+  /*
   const handleCheckout = async (branch: Branch) => {
     if (!currentRepo || branch.is_current || branch.is_remote) return;
     setIsCheckingOut(true);
@@ -82,6 +95,17 @@ export function Toolbar() {
       setIsCheckingOut(false);
     }
   };
+  */
+
+  const [handleCheckout, isCheckingOut] = useLoading(async (branch: Branch) => {
+    if (!currentRepo || branch.is_current || branch.is_remote) return;
+    await tauriGitService.checkoutBranch(currentRepo.path, branch.name);
+    toast.success(`Switched to ${branch.name}`);
+    await loadBranches();
+    await refreshStatus(currentRepo.path);
+  }, (error) => {
+    toast.error(`Failed to checkout: ${error}`);
+  });
 
   // Helper to handle SSH key locked errors
   const handleSshKeyLocked = (error: unknown, retryOperation: () => Promise<void>) => {
@@ -103,6 +127,7 @@ export function Toolbar() {
     }
   };
 
+  /*
   const handleFetch = async () => {
     if (!currentRepo) return;
     setIsFetching(true);
@@ -119,6 +144,19 @@ export function Toolbar() {
       setIsFetching(false);
     }
   };
+  */
+
+  const [handleFetch, isFetching] = useLoading(async () => {
+    if (!currentRepo) return;
+    await tauriGitService.fetch(currentRepo.path, undefined, true);
+    toast.success('Fetch successful');
+    triggerRefresh();
+    await Promise.all([loadBranches(), refreshStatus(currentRepo.path)]);
+  }, (error) => {
+    if (!handleSshKeyLocked(error, handleFetch)) {
+        toast.error(`Fetch failed: ${error}`);
+      }
+  });
 
   const handleRemoteSuccess = async () => {
     triggerRefresh();
@@ -217,13 +255,13 @@ export function Toolbar() {
                     )}
                   >
                     {branch.is_current ? (
-                      <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <Check className="h-4 w-4 text-green-500 shrink-0" />
                     ) : (
-                      <GitBranch className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <GitBranch className="h-4 w-4 text-muted-foreground shrink-0" />
                     )}
                     <span className="truncate flex-1">{branch.name}</span>
                     {(branch.ahead > 0 || branch.behind > 0) && (
-                      <span className="text-xs flex-shrink-0">
+                      <span className="text-xs shrink-0">
                         {branch.ahead > 0 && (
                           <span className="text-green-500">↑{branch.ahead}</span>
                         )}

@@ -100,7 +100,7 @@ export function RemotesView() {
                 className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <Globe className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <Globe className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0 flex-1">
                     <div className="font-medium">{remote.name}</div>
                     <div className="text-sm text-muted-foreground truncate" title={remote.fetch_url}>

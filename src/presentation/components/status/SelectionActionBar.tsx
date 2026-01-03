@@ -42,7 +42,7 @@ export function SelectionActionBar() {
   };
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 border-t bg-muted/50 flex-shrink-0">
+    <div className="flex items-center gap-2 px-3 py-2 border-t bg-muted/50 shrink-0">
       <span className="text-sm text-muted-foreground flex-1">
         {selectedFiles.length} selected
       </span>

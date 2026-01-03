@@ -109,7 +109,7 @@ export function StashItem({ stash, isSelected, onSelect, onAction }: StashItemPr
             : 'hover:bg-accent/50'
         )}
       >
-        <Archive className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+        <Archive className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono text-xs text-muted-foreground">

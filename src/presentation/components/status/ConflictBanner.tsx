@@ -34,7 +34,7 @@ export function ConflictBanner({ onResolved }: ConflictBannerProps) {
   };
 
   return (
-    <Alert variant="destructive" className="m-2 flex-shrink-0">
+    <Alert variant="destructive" className="m-2 shrink-0">
       <AlertTriangle className="h-4 w-4" />
       <div className="flex-1">
         <AlertTitle>Merge Conflict</AlertTitle>
@@ -47,7 +47,7 @@ export function ConflictBanner({ onResolved }: ConflictBannerProps) {
         variant="outline"
         size="sm"
         onClick={handleAbort}
-        className="ml-4 flex-shrink-0"
+        className="ml-4 shrink-0"
       >
         <X className="h-4 w-4 mr-1" />
         Abort

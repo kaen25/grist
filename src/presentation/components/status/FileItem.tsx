@@ -105,7 +105,7 @@ export function FileItem({ entry, type, allFilePaths, onDiscardRequest }: FileIt
           <span className={cn('w-4 text-center text-xs font-mono', color)}>
             {label}
           </span>
-          <Icon className={cn('h-4 w-4 flex-shrink-0', color)} />
+          <Icon className={cn('h-4 w-4 shrink-0', color)} />
           <span className={cn('truncate flex-1 text-left', entry.only_eol_changes && 'opacity-50')}>
             {entry.original_path ? (
               <>

@@ -48,19 +48,19 @@ export function BranchItem({ branch, onAction }: BranchItemProps) {
 
   return (
     <div className="flex items-center gap-2 p-2 rounded hover:bg-accent/50 group">
-      <GitBranch className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      <GitBranch className="h-4 w-4 text-muted-foreground shrink-0" />
 
       <span className="flex-1 font-medium truncate">{displayName}</span>
 
       {branch.is_current && (
-        <Badge variant="secondary" className="text-xs flex-shrink-0">
+        <Badge variant="secondary" className="text-xs shrink-0">
           <Check className="h-3 w-3 mr-1" />
           current
         </Badge>
       )}
 
       {(branch.ahead > 0 || branch.behind > 0) && (
-        <span className="text-xs text-muted-foreground flex-shrink-0">
+        <span className="text-xs text-muted-foreground shrink-0">
           {branch.ahead > 0 && <span className="text-green-500">↑{branch.ahead}</span>}
           {branch.ahead > 0 && branch.behind > 0 && ' '}
           {branch.behind > 0 && <span className="text-red-500">↓{branch.behind}</span>}
@@ -73,7 +73,7 @@ export function BranchItem({ branch, onAction }: BranchItemProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100 flex-shrink-0"
+              className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
             >
               <MoreHorizontal className="h-4 w-4" />
             </Button>

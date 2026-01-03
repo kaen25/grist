@@ -138,7 +138,7 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
               {/* Refs */}
               {commit.refs.length > 0 && (
                 <div className="flex items-start gap-2">
-                  <span className="text-muted-foreground w-20 flex-shrink-0">Refs</span>
+                  <span className="text-muted-foreground w-20 shrink-0">Refs</span>
                   <div className="flex flex-wrap gap-1">
                     {commit.refs.map((ref) => {
                       const isTag = ref.includes('tag:') || ref.includes('refs/tags/');
@@ -216,7 +216,7 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
               {/* Show commit date if same person but different dates */}
               {!isDifferentCommitter && commit.author_date !== commit.committer_date && (
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground w-20 flex-shrink-0">Committed</span>
+                  <span className="text-muted-foreground w-20 hrink-0">Committed</span>
                   <span className="text-xs text-muted-foreground">{committerDate}</span>
                 </div>
               )}
@@ -229,7 +229,7 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
       <div className="flex-1 min-h-0 flex">
         {/* File list */}
         <div className="w-56 border-r flex flex-col">
-          <div className="px-3 py-2 border-b flex-shrink-0">
+          <div className="px-3 py-2 border-b shrink-0">
             <h4 className="text-xs font-medium text-muted-foreground">
               Files changed ({files.length})
             </h4>

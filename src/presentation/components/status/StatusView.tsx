@@ -113,7 +113,7 @@ export function StatusView() {
               {/* Top section: Unstaged files */}
               <ResizablePanel defaultSize={60} minSize={20}>
                 <div className="flex flex-col h-full overflow-hidden">
-                  <div className="flex items-center justify-between px-3 py-1.5 flex-shrink-0 border-b">
+                  <div className="flex items-center justify-between px-3 py-1.5 shrink-0 border-b">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       Working Tree
                     </span>
@@ -170,7 +170,7 @@ export function StatusView() {
               {/* Bottom section: Staged files */}
               <ResizablePanel defaultSize={40} minSize={20}>
                 <div className="flex flex-col h-full overflow-hidden">
-                  <div className="flex items-center justify-between px-3 py-1.5 flex-shrink-0 border-b">
+                  <div className="flex items-center justify-between px-3 py-1.5 shrink-0 border-b">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       Staged
                     </span>

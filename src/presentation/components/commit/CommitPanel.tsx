@@ -62,7 +62,7 @@ export function CommitPanel() {
   }, [canCommit, isCommitting, handleCommit]);
 
   return (
-    <div className="border-t p-3 space-y-3 flex-shrink-0">
+    <div className="border-t p-3 space-y-3 shrink-0">
       <CommitMessageEditor
         value={message}
         onChange={setMessage}

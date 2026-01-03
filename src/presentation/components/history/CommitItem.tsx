@@ -313,7 +313,7 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
           >
             {/* Branch/Tag badges - outline style */}
             {commit.refs.length > 0 && (
-              <div className="flex gap-1 flex-shrink-0">
+              <div className="flex gap-1 shrink-0">
                 {commit.refs.slice(0, 3).map((ref) => {
                   const { label, isHead, isTag, isRemote } = formatRef(ref);
                   return (
@@ -358,7 +358,7 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
             />
 
             {/* Short hash */}
-            <span className="font-mono text-xs text-muted-foreground flex-shrink-0">
+            <span className="font-mono text-xs text-muted-foreground shrink-0">
               {commit.short_hash}
             </span>
           </button>
