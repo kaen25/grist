@@ -1,14 +1,16 @@
 import { useRepositoryStore } from '@/application/stores';
 import { useUIStore } from '@/application/stores/ui.store';
+import { ButtonCopy } from '@/components/atom/button-copy';
 import { cn } from '@/lib/utils';
 
 interface CommitHashLinkProps {
   hash: string;
   shortHash?: string;
   className?: string;
+  isCopyable?: boolean;
 }
 
-export function CommitHashLink({ hash, shortHash, className }: CommitHashLinkProps) {
+export function CommitHashLink({ hash, shortHash, className, isCopyable = false }: CommitHashLinkProps) {
   const { commits } = useRepositoryStore();
   const { setSelectedCommit } = useUIStore();
 
@@ -29,7 +31,8 @@ export function CommitHashLink({ hash, shortHash, className }: CommitHashLinkPro
     );
   }
 
-  return (
+  return (<>
+    {isCopyable ? <ButtonCopy textToCopy={hash} /> : null}
     <button
       onClick={handleClick}
       className={cn(
@@ -41,5 +44,6 @@ export function CommitHashLink({ hash, shortHash, className }: CommitHashLinkPro
     >
       {displayHash}
     </button>
+    </>
   );
 }

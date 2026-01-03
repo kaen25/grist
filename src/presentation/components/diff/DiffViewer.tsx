@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, use } from 'react';
 import { AlignJustify, Columns, Plus, Minus, Settings2, WrapText, Eye, Image as ImageIcon } from 'lucide-react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,9 @@ import { DiffHeader } from './DiffHeader';
 import { UnifiedDiff } from './UnifiedDiff';
 import { SideBySideDiff } from './SideBySideDiff';
 import { useUIStore, useRepositoryStore } from '@/application/stores';
-import { useDiffLineSelection } from '@/application/hooks';
+import { useDiffLineSelection, useIsImage, useLoading } from '@/application/hooks';
 import { tauriGitService } from '@/infrastructure/services';
 import type { FileDiff } from '@/domain/value-objects';
-import { IMAGE_EXTENSIONS } from '@/settings';
 
 interface DiffViewerProps {
   path: string;
@@ -40,15 +39,11 @@ export function DiffViewer({ path, staged = false, untracked = false, onlyEolCha
   } = useUIStore();
   const { currentRepo } = useRepositoryStore();
   const [diff, setDiff] = useState<FileDiff | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const lineSelection = useDiffLineSelection();
 
   // Check if file is an image
-  const isImage = useMemo(() => {
-    const ext = path.toLowerCase().substring(path.lastIndexOf('.'));
-    return IMAGE_EXTENSIONS.includes(ext);
-  }, [path]);
+  const isImage = useIsImage(path);
 
   // Get image source URL for working tree files
   const workingTreeImageSrc = useMemo(() => {
@@ -149,39 +144,34 @@ export function DiffViewer({ path, staged = false, untracked = false, onlyEolCha
     }
   }, [currentRepo, diff, path, staged, lineSelection]);
 
-  useEffect(() => {
-    async function fetchDiff() {
-      if (!currentRepo) return;
 
-      setLoading(true);
-      setError(null);
-      lineSelection.clearSelection();
-
-      try {
+  const [fetchDiff, loading] = useLoading(async () => {
+    if (!currentRepo) return;
+    setError(null);
+    lineSelection.clearSelection();
+    let fileDiff: FileDiff | null = null;
         if (stashIndex !== undefined) {
           const diffs = await tauriGitService.getStashDiff(currentRepo.path, stashIndex);
-          const fileDiff = diffs.find((d) => d.new_path === path);
-          setDiff(fileDiff ?? null);
+          fileDiff = diffs.find((d) => d.new_path === path)?? null;
         } else if (commitHash) {
           const diffs = await tauriGitService.getCommitDiff(currentRepo.path, commitHash);
-          const fileDiff = diffs.find((d) => d.new_path === path);
-          setDiff(fileDiff ?? null);
+          fileDiff = diffs.find((d) => d.new_path === path) ?? null;
         } else if (untracked) {
-          const fileDiff = await tauriGitService.getUntrackedFileDiff(currentRepo.path, path);
-          setDiff(fileDiff);
+          fileDiff = await tauriGitService.getUntrackedFileDiff(currentRepo.path, path);
         } else {
           // Don't ignore CR for EOL-only files so we can see the changes
           const ignoreCr = !onlyEolChanges;
-          const fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged, ignoreCr);
-          setDiff(fileDiff);
+          fileDiff = await tauriGitService.getFileDiff(currentRepo.path, path, staged, ignoreCr);
         }
-      } catch (err) {
-        setError(String(err));
-      } finally {
-        setLoading(false);
-      }
-    }
+        setDiff(fileDiff);
+  },
+  (err) => {
+    setError(String(err));
+  }
+)
 
+
+  useEffect(() => {
     fetchDiff();
   }, [path, staged, untracked, onlyEolChanges, commitHash, stashIndex, currentRepo]); // eslint-disable-line react-hooks/exhaustive-deps
 

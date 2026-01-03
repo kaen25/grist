@@ -9,9 +9,11 @@ import { DiffViewer } from '../diff';
 import { GravatarAvatar, CommitHashLink } from '../common';
 import { useRepositoryStore } from '@/application/stores';
 import { tauriGitService } from '@/infrastructure/services';
-import { cn } from '@/lib/utils';
+import { cleanRef, cn, isRemoteRef, isTagRef } from '@/lib/utils';
 import type { Commit } from '@/domain/entities';
 import type { FileDiff } from '@/domain/value-objects';
+import { ButtonCopy } from '@/components/atom/button-copy';
+import { Tag } from '@/components/atom/tag';
 
 interface CommitDetailsProps {
   commit: Commit;
@@ -54,12 +56,6 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
     loadDiff();
   }, [commit.hash, currentRepo]);
 
-  const handleCopyHash = async () => {
-    await navigator.clipboard.writeText(commit.hash);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const authorDate = format(new Date(commit.author_date), 'PPpp');
   const committerDate = format(new Date(commit.committer_date), 'PPpp');
 
@@ -75,47 +71,33 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
           {/* Two-column responsive grid */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
             {/* Left: Commit Message */}
-            <div className="min-w-0">
+            <div className="min-w-0 flex flex-col gap-1">
               <h3 className="font-semibold text-base leading-tight">{commit.subject}</h3>
-              {commit.body && (
-                <pre className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed font-sans mt-2 max-h-32 overflow-y-auto">
-                  {commit.body}
-                </pre>
-              )}
+              <Separator />
+              <pre className="whitespace-pre-wrap text-sm text-muted-foreground bg-muted/60 dark:bg-muted/20 rounded-xl px-4 py-1 leading-relaxed font-sans min-h-32 max-h-32 overflow-y-scroll flex-1">
+              {commit.body ? commit.body : ''}
+              </pre>
             </div>
-
             {/* Right: Meta info */}
             <div className="lg:w-80 lg:border-l lg:pl-4 space-y-2 text-sm">
               {/* SHA */}
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground w-20 flex-shrink-0">SHA</span>
+                <span className="text-muted-foreground w-20 shrink-0">SHA</span>
+                <ButtonCopy textToCopy={commit.hash} />
                 <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded truncate">
                   {commit.short_hash}
                 </code>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 flex-shrink-0"
-                  onClick={handleCopyHash}
-                  title="Copy full hash"
-                >
-                  {copied ? (
-                    <Check className="h-3 w-3 text-green-500" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </Button>
               </div>
 
               {/* Parents */}
               {commit.parent_hashes.length > 0 && (
                 <div className="flex items-start gap-2">
-                  <span className="text-muted-foreground w-20 flex-shrink-0">
+                  <span className="text-muted-foreground w-20 shrink-0">
                     {commit.parent_hashes.length > 1 ? 'Parents' : 'Parent'}
                   </span>
                   <div className="flex flex-wrap gap-1">
                     {commit.parent_hashes.map((hash) => (
-                      <CommitHashLink key={hash} hash={hash} />
+                      <CommitHashLink key={hash} hash={hash} isCopyable={true} />
                     ))}
                   </div>
                 </div>
@@ -124,12 +106,12 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
               {/* Children */}
               {childHashes.length > 0 && (
                 <div className="flex items-start gap-2">
-                  <span className="text-muted-foreground w-20 flex-shrink-0">
+                  <span className="text-muted-foreground w-20 shrink-0">
                     {childHashes.length > 1 ? 'Children' : 'Child'}
                   </span>
                   <div className="flex flex-wrap gap-1">
                     {childHashes.map((hash) => (
-                      <CommitHashLink key={hash} hash={hash} />
+                      <CommitHashLink key={hash} hash={hash} isCopyable={true}  />
                     ))}
                   </div>
                 </div>
@@ -141,28 +123,24 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
                   <span className="text-muted-foreground w-20 shrink-0">Refs</span>
                   <div className="flex flex-wrap gap-1">
                     {commit.refs.map((ref) => {
-                      const isTag = ref.includes('tag:') || ref.includes('refs/tags/');
-                      const isRemote = ref.includes('origin/') || ref.includes('refs/remotes/');
-                      const label = ref
-                        .replace('HEAD -> ', '')
-                        .replace('tag: ', '')
-                        .replace('refs/heads/', '')
-                        .replace('refs/tags/', '')
-                        .replace('refs/remotes/', '');
+                      const isTag = isTagRef(ref)
+                      const isRemote = isRemoteRef(ref)
+                      const label = cleanRef(ref)
+
+                      let color = 'border-amber-500 text-amber-600'
+                      if(!isTag && isRemote) {
+                        color = 'border-red-500 text-red-600'
+                      } else if (!isTag && !isRemote) {
+                        color = 'border-green-500 text-green-600'
+                      }
 
                       return (
-                        <Badge
+                        <Tag
                           key={ref}
-                          variant="outline"
-                          className={cn(
-                            'text-xs font-normal',
-                            isTag && 'border-amber-500 text-amber-600',
-                            !isTag && isRemote && 'border-red-500 text-red-600',
-                            !isTag && !isRemote && 'border-green-500 text-green-600'
-                          )}
+                          className={color}
                         >
                           {label}
-                        </Badge>
+                        </Tag>
                       );
                     })}
                   </div>
@@ -173,18 +151,18 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
 
               {/* Author */}
               <div className="flex items-start gap-2">
-                <span className="text-muted-foreground w-20 flex-shrink-0">Author</span>
+                <span className="text-muted-foreground w-20 shrink-0">Author</span>
                 <div className="flex items-center gap-2 min-w-0">
                   <GravatarAvatar
                     email={commit.author_email}
                     name={commit.author_name}
                     size={20}
                     fallback="identicon"
-                    className="flex-shrink-0"
+                    className="shrink-0"
                   />
                   <div className="min-w-0">
                     <div className="truncate">
-                      <span className="font-medium">{commit.author_name}</span>
+                      <span className="font-medium">{commit.author_name} &lt;<a href={`mailto:${commit.author_email}`}>{commit.author_email}</a>&gt;</span>
                     </div>
                     <div className="text-xs text-muted-foreground">{authorDate}</div>
                   </div>
@@ -194,18 +172,18 @@ export function CommitDetails({ commit }: CommitDetailsProps) {
               {/* Committer (only show if different from author) */}
               {isDifferentCommitter && (
                 <div className="flex items-start gap-2">
-                  <span className="text-muted-foreground w-20 flex-shrink-0">Committer</span>
+                  <span className="text-muted-foreground w-20 shrink-0">Committer</span>
                   <div className="flex items-center gap-2 min-w-0">
                     <GravatarAvatar
                       email={commit.committer_email}
                       name={commit.committer_name}
                       size={20}
                       fallback="identicon"
-                      className="flex-shrink-0"
+                      className="shrink-0"
                     />
                     <div className="min-w-0">
                       <div className="truncate">
-                        <span className="font-medium">{commit.committer_name}</span>
+                        <span className="font-medium">{commit.committer_name} &lt;<a href={`mailto:${commit.committer_email}`}>{commit.committer_email}</a>&gt;</span>
                       </div>
                       <div className="text-xs text-muted-foreground">{committerDate}</div>
                     </div>

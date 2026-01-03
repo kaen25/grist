@@ -31,12 +31,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { cleanRef, cn, isHeadRef, isRemoteRef, isTagRef } from '@/lib/utils';
 import { useRepositoryStore } from '@/application/stores';
 import { tauriGitService } from '@/infrastructure/services';
 import { GravatarAvatar } from '@/presentation/components/common';
 import { toast } from 'sonner';
 import type { Commit } from '@/domain/entities';
+import { useToggle } from '@/application/hooks';
 
 interface CommitItemProps {
   commit: Commit;
@@ -55,15 +56,10 @@ interface RefInfo {
 }
 
 function formatRef(ref: string): RefInfo {
-  const isHead = ref.startsWith('HEAD -> ');
-  const isTag = ref.startsWith('tag: ') || ref.includes('refs/tags/');
-  const isRemote = ref.includes('origin/') || ref.includes('refs/remotes/');
-  let label = ref
-    .replace('HEAD -> ', '')
-    .replace('tag: ', '')
-    .replace('refs/heads/', '')
-    .replace('refs/tags/', '')
-    .replace('refs/remotes/', '');
+  const isHead = isHeadRef(ref);
+  const isTag = isTagRef(ref);
+  const isRemote = isRemoteRef(ref);
+  let label = cleanRef(ref);
 
   // Parse remote name and branch name for remote branches
   let remoteName: string | null = null;
@@ -79,21 +75,21 @@ function formatRef(ref: string): RefInfo {
 
 export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: CommitItemProps) {
   const { currentRepo } = useRepositoryStore();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showRenameDialog, setShowRenameDialog] = useState(false);
-  const [showCreateTagDialog, setShowCreateTagDialog] = useState(false);
-  const [showForceDeleteDialog, setShowForceDeleteDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useToggle();
+  const [showRenameDialog, setShowRenameDialog] = useToggle();
+  const [showCreateTagDialog, setShowCreateTagDialog] = useToggle();
+  const [showForceDeleteDialog, setShowForceDeleteDialog] = useToggle(false);
   const [branchToForceDelete, setBranchToForceDelete] = useState('');
   const [branchName, setBranchName] = useState('');
   const [renameFrom, setRenameFrom] = useState('');
   const [renameTo, setRenameTo] = useState('');
   const [tagName, setTagName] = useState('');
   const [tagMessage, setTagMessage] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [isCreatingTag, setIsCreatingTag] = useState(false);
-  const [isForceDeleting, setIsForceDeleting] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [isCreating, setIsCreating] = useToggle(false);
+  const [isRenaming, setIsRenaming] = useToggle(false);
+  const [isCreatingTag, setIsCreatingTag] = useToggle(false);
+  const [isForceDeleting, setIsForceDeleting] = useToggle(false);
+  const [copied, setCopied] = useToggle(false);
 
   // Get local branches ON THIS COMMIT (for rename - contextual)
   const localBranchesOnCommit = commit.refs
@@ -320,7 +316,7 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
                     <span
                       key={ref}
                       className={cn(
-                        'px-1.5 rounded text-xs font-medium truncate max-w-[100px] leading-tight',
+                        'px-1.5 rounded text-xs font-medium truncate max-w-25 leading-tight',
                         // Current branch (HEAD): filled green, white text
                         isHead && 'bg-green-500 text-white font-bold',
                         // Tags: outline amber

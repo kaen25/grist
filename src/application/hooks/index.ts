@@ -4,4 +4,7 @@ export { useGitStatus } from './useGitStatus';
 export { useStagingActions } from './useStagingActions';
 export { useDiffLineSelection } from './useDiffLineSelection';
 export { useHistory } from './useHistory';
+export { useIsImage } from './useIsImage';
+export { useLoading } from './useLoading';
+export { useToggle } from './useToggle';
 export type { LineKey } from './useDiffLineSelection';
