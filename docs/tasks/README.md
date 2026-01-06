@@ -25,13 +25,16 @@ Client GUI Git desktop (style GitExtensions) avec:
 | 9 | [phase-09-history.md](./phase-09-history.md) | ✅ 5/5 | Log, CommitList virtualisé |
 | 10 | [phase-10-graph.md](./phase-10-graph.md) | ✅ 4/4 | Graph SVG des branches |
 | 11 | [phase-11-branches.md](./phase-11-branches.md) | ✅ 10/10 | CRUD branches, context menu, UI |
-| 12 | [phase-12-merge-rebase.md](./phase-12-merge-rebase.md) | ✅ 4/4 | Merge, rebase, conflits |
+| 12 | [phase-12-merge-rebase.md](./phase-12-merge-rebase.md) | ✅ 6/6 | Merge, rebase, conflits |
 | 13 | [phase-13-remotes.md](./phase-13-remotes.md) | ✅ 6/6 | Fetch, pull, push, SSH key mgmt |
 | 14 | [phase-14-stash.md](./phase-14-stash.md) | ✅ 4/4 | Stash operations |
 | 15 | [phase-15-cherry-revert.md](./phase-15-cherry-revert.md) | ⬜ 0/2 | Cherry-pick, revert |
 | 16 | [phase-16-settings.md](./phase-16-settings.md) | ⬜ 0/4 | Settings, raccourcis |
+| 17 | [phase-17-reset.md](./phase-17-reset.md) | ⬜ 0/2 | Reset soft/mixed/hard |
+| 18 | [phase-18-interactive-rebase.md](./phase-18-interactive-rebase.md) | ⬜ 0/3 | Rebase interactif, squash, fixup |
+| 19 | [phase-19-blame.md](./phase-19-blame.md) | ⬜ 0/3 | Blame / annotate |
 
-**Total: 80/84 tâches (95%)**
+**Total: 82/100 tâches (82%)**
 
 ---
 

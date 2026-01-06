@@ -499,4 +499,48 @@ import { ConflictBanner } from './ConflictBanner';
 
 ---
 
-## Progression: 4/4
+## Tâche 12.5: Connecter MergeDialog/RebaseDialog à l'UI
+
+**Commit**: `feat: wire merge and rebase dialogs to UI`
+
+**Fichiers**:
+- `src/presentation/components/branches/BranchItem.tsx` (mise à jour)
+- `src/presentation/components/branches/BranchesView.tsx` (mise à jour)
+- `src/presentation/components/layout/Toolbar.tsx` (mise à jour)
+
+**Actions**:
+- [x] ~~Ajouter boutons "Merge" et "Rebase" dans la toolbar~~ (déplacé dans context menu)
+- [x] Ajouter options "Merge into current" et "Rebase onto" dans le context menu de BranchItem
+- [x] Monter MergeDialog et RebaseDialog dans BranchesView avec state
+- [x] Tester l'accès aux dialogs depuis plusieurs points d'entrée
+
+---
+
+## Tâche 12.6: Bouton Continue merge/rebase
+
+**Commit**: `feat: add continue button for merge and rebase`
+
+**Fichiers**:
+- `src-tauri/src/git/branch.rs` (mise à jour)
+- `src-tauri/src/commands/branch.rs` (mise à jour)
+- `src/presentation/components/status/ConflictBanner.tsx` (mise à jour)
+
+**Actions**:
+- [x] Ajouter `continue_merge` dans le backend Rust
+- [x] Ajouter commande Tauri `continue_merge`
+- [x] Ajouter bouton "Continue" dans ConflictBanner (à côté de Abort)
+- [x] Détecter si c'est un merge ou rebase en cours pour appeler la bonne commande
+
+---
+
+## Progression: 6/6 ✅
+
+---
+
+## Note: Implémentation finale
+
+Les opérations merge et rebase sont accessibles via le **context menu des commits** dans l'historique:
+- "Merge this commit into current"
+- "Rebase current onto this commit"
+
+Les dialogs MergeDialog et RebaseDialog ont été supprimés (code mort) car les actions sont directes depuis le context menu.

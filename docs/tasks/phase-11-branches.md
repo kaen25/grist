@@ -711,3 +711,22 @@ case 'branches':
 ---
 
 ## Progression: 10/10
+
+---
+
+## Note: Refactoring ultérieur
+
+**La vue BranchesView a été supprimée** car redondante avec les fonctionnalités du context menu dans CommitItem.
+
+Les opérations de branche sont maintenant accessibles uniquement via:
+- **Context menu sur les commits** (clic droit dans l'historique)
+- **Dropdown de branche** dans la toolbar (pour switch rapide)
+
+Fichiers supprimés:
+- `src/presentation/components/branches/BranchesView.tsx`
+- `src/presentation/components/branches/BranchList.tsx`
+- `src/presentation/components/branches/BranchItem.tsx`
+- `src/presentation/components/branches/CreateBranchDialog.tsx`
+- `src/presentation/components/branches/MergeDialog.tsx`
+- `src/presentation/components/branches/RebaseDialog.tsx`
+- `src/presentation/components/branches/index.ts`

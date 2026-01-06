@@ -222,7 +222,7 @@ export function CommitGraph({
     <svg
       width={width}
       height={height}
-      className="flex-shrink-0"
+      className="shrink-0"
       style={{ minWidth: width }}
     >
       {/* Render connections first (behind nodes) */}
