@@ -1,8 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { DiffViewer } from '../diff';
@@ -21,7 +18,6 @@ interface CommitDetailsProps {
 
 export function CommitDetails({ commit }: CommitDetailsProps) {
   const { currentRepo, commits } = useRepositoryStore();
-  const [copied, setCopied] = useState(false);
   const [files, setFiles] = useState<FileDiff[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

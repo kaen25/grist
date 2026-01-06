@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, use } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AlignJustify, Columns, Plus, Minus, Settings2, WrapText, Eye, Image as ImageIcon } from 'lucide-react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
