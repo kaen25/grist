@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   GitBranch,
+  GitMerge,
   Trash2,
   Copy,
   Check,
@@ -29,6 +30,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cleanRef, cn, isHeadRef, isRemoteRef, isTagRef } from '@/lib/utils';
@@ -81,6 +83,7 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
   const [showForceDeleteDialog, setShowForceDeleteDialog] = useToggle(false);
   const [branchToForceDelete, setBranchToForceDelete] = useState('');
   const [branchName, setBranchName] = useState('');
+  const [checkoutAfterCreate, setCheckoutAfterCreate] = useState(true);
   const [renameFrom, setRenameFrom] = useState('');
   const [renameTo, setRenameTo] = useState('');
   const [tagName, setTagName] = useState('');
@@ -122,7 +125,14 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
     setIsCreating(true);
     try {
       await tauriGitService.createBranch(currentRepo.path, branchName.trim(), commit.hash);
-      toast.success(`Created branch "${branchName}" at ${commit.short_hash}`);
+
+      if (checkoutAfterCreate) {
+        await tauriGitService.checkoutBranch(currentRepo.path, branchName.trim());
+        toast.success(`Created and switched to branch "${branchName}"`);
+      } else {
+        toast.success(`Created branch "${branchName}" at ${commit.short_hash}`);
+      }
+
       setBranchName('');
       setShowCreateDialog(false);
       onBranchChange?.();
@@ -293,6 +303,42 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
       onBranchChange?.();
     } catch (error) {
       toast.error(`Failed to delete tag: ${error}`);
+    }
+  };
+
+  const handleMergeCommit = async () => {
+    if (!currentRepo) return;
+
+    try {
+      await tauriGitService.mergeBranch(currentRepo.path, commit.hash, false);
+      toast.success(`Merged ${commit.short_hash} into current branch`);
+      onBranchChange?.();
+    } catch (error) {
+      const errorStr = String(error).toLowerCase();
+      if (errorStr.includes('conflict') || errorStr.includes('merge conflict')) {
+        toast.error('Merge conflict! Please resolve conflicts and commit.');
+        onBranchChange?.();
+      } else {
+        toast.error(`Merge failed: ${error}`);
+      }
+    }
+  };
+
+  const handleRebaseOntoCommit = async () => {
+    if (!currentRepo) return;
+
+    try {
+      await tauriGitService.rebaseBranch(currentRepo.path, commit.hash);
+      toast.success(`Rebased onto ${commit.short_hash}`);
+      onBranchChange?.();
+    } catch (error) {
+      const errorStr = String(error).toLowerCase();
+      if (errorStr.includes('conflict') || errorStr.includes('merge conflict')) {
+        toast.error('Rebase conflict! Please resolve conflicts and continue rebase.');
+        onBranchChange?.();
+      } else {
+        toast.error(`Rebase failed: ${error}`);
+      }
     }
   };
 
@@ -603,15 +649,28 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
             Checkout this commit...
           </ContextMenuItem>
 
+          <ContextMenuSeparator />
+
+          {/* Merge & Rebase operations */}
+          <ContextMenuItem onClick={handleMergeCommit}>
+            <GitMerge className="h-4 w-4 mr-2" />
+            Merge this commit into current
+          </ContextMenuItem>
+          <ContextMenuItem onClick={handleRebaseOntoCommit}>
+            <GitBranch className="h-4 w-4 mr-2" />
+            Rebase current onto this commit
+          </ContextMenuItem>
+
+          <ContextMenuSeparator />
+
           {/* Future operations - disabled for now */}
           <ContextMenuItem disabled>
             <RotateCcw className="h-4 w-4 mr-2" />
             Revert this commit...
           </ContextMenuItem>
           <ContextMenuItem disabled>
-            <GitBranch className="h-4 w-4 mr-2" />
-            Cherry pick this commit...
-          </ContextMenuItem>
+            <Copy className="h-4 w-4 mr-2" />
+            Cherry pick this commit...</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
 
@@ -622,21 +681,34 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
             <DialogTitle>Create Branch at {commit.short_hash}</DialogTitle>
           </DialogHeader>
 
-          <div className="py-4">
-            <Label htmlFor="branch-name">Branch Name</Label>
-            <Input
-              id="branch-name"
-              value={branchName}
-              onChange={(e) => setBranchName(e.target.value)}
-              placeholder="feature/my-feature"
-              disabled={isCreating}
-              className="mt-2"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && branchName.trim()) {
-                  handleCreateBranch();
-                }
-              }}
-            />
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="branch-name">Branch Name</Label>
+              <Input
+                id="branch-name"
+                value={branchName}
+                onChange={(e) => setBranchName(e.target.value)}
+                placeholder="feature/my-feature"
+                disabled={isCreating}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && branchName.trim()) {
+                    handleCreateBranch();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="checkout-after-create"
+                checked={checkoutAfterCreate}
+                onCheckedChange={(checked) => setCheckoutAfterCreate(checked === true)}
+                disabled={isCreating}
+              />
+              <Label htmlFor="checkout-after-create" className="cursor-pointer">
+                Checkout after creation
+              </Label>
+            </div>
           </div>
 
           <DialogFooter>
