@@ -52,7 +52,7 @@ export interface ICommitRepository {
 - `src-tauri/src/commands/commit.rs` (mise à jour)
 
 **Actions**:
-- [ ] Ajouter dans `src-tauri/src/git/commit.rs`:
+- [x] Ajouter dans `src-tauri/src/git/commit.rs`:
 ```rust
 pub fn cherry_pick(executor: &GitExecutor, hash: &str) -> Result<(), GitError> {
     let result = executor.execute(&["cherry-pick", hash])?;
@@ -96,7 +96,7 @@ pub fn abort_revert(executor: &GitExecutor) -> Result<(), GitError> {
     Ok(())
 }
 ```
-- [ ] Ajouter dans `src-tauri/src/commands/commit.rs`:
+- [x] Ajouter dans `src-tauri/src/commands/commit.rs`:
 ```rust
 #[tauri::command]
 pub async fn cherry_pick(repo_path: String, hash: String) -> Result<(), String> {
@@ -110,8 +110,8 @@ pub async fn revert_commit(repo_path: String, hash: String) -> Result<(), String
     commit::revert_commit(&executor, &hash).map_err(|e| e.to_string())
 }
 ```
-- [ ] Ajouter les commandes au `generate_handler![]`
-- [ ] Ajouter dans `src/services/git/index.ts`:
+- [x] Ajouter les commandes au `generate_handler![]`
+- [x] Ajouter dans `src/infrastructure/services/tauri-git.service.ts`:
 ```typescript
 async cherryPick(hash: string): Promise<void> {
   return invoke('cherry_pick', { repoPath: this.repoPath, hash });
@@ -132,7 +132,7 @@ async revertCommit(hash: string): Promise<void> {
 - `src/components/history/CommitItem.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Mettre à jour `CommitItem.tsx` pour ajouter context menu:
+- [x] Mettre à jour `CommitItem.tsx` pour ajouter context menu:
 ```typescript
 import { CherryIcon, Undo, MoreHorizontal } from 'lucide-react';
 import {
@@ -209,4 +209,4 @@ Note: Lucide n'a pas de CherryIcon, utiliser un autre icône comme `GitCommit` o
 
 ---
 
-## Progression: 0/2
+## Progression: 2/2
