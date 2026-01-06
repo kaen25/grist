@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Moon, Sun, Monitor, Check, X } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Moon, Sun, Monitor, Check, X, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
@@ -26,23 +26,52 @@ export function SettingsView() {
     setGitPath,
   } = useSettingsStore();
 
-  const [gitInfo, setGitInfo] = useState<{ path: string; version: string } | null>(null);
-  const [gitError, setGitError] = useState<string | null>(null);
+  const [detectedPath, setDetectedPath] = useState<string>('');
+  const [gitVersion, setGitVersion] = useState<string | null>(null);
+  const [gitError, setGitError] = useState<boolean>(false);
+  const [isChecking, setIsChecking] = useState(false);
 
+  // Load detected path on mount
   useEffect(() => {
-    Promise.all([
-      tauriGitService.getGitPath(),
-      tauriGitService.getVersion()
-    ]).then(([path, version]) => {
-      setGitInfo({ path, version });
-      // Set the detected path as default if user hasn't set a custom path
+    tauriGitService.getGitPath().then((path) => {
+      setDetectedPath(path);
       if (!gitPath) {
         setGitPath(path);
       }
-    }).catch((err) => {
-      setGitError(String(err));
-    });
+    }).catch(() => {});
   }, []);
+
+  // Validate git path when it changes
+  const validateGitPath = useCallback(async (path: string) => {
+    if (!path.trim()) {
+      setGitVersion(null);
+      setGitError(false);
+      return;
+    }
+
+    setIsChecking(true);
+    setGitError(false);
+    setGitVersion(null);
+
+    try {
+      const version = await tauriGitService.testGitPath(path);
+      setGitVersion(version);
+      setGitError(false);
+    } catch {
+      setGitError(true);
+      setGitVersion(null);
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
+  // Debounced validation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      validateGitPath(gitPath);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [gitPath, validateGitPath]);
 
   return (
     <div className="h-full overflow-auto">
@@ -158,24 +187,27 @@ export function SettingsView() {
             <div className="flex items-center justify-between">
               <Label htmlFor="git-path">Git Binary Path</Label>
               <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                {gitError ? (
+                {isChecking ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Checking...</span>
+                  </>
+                ) : gitError ? (
                   <>
                     <X className="h-4 w-4 text-destructive" />
-                    <span className="text-destructive">Not found</span>
+                    <span className="text-destructive">Invalid</span>
                   </>
-                ) : gitInfo ? (
+                ) : gitVersion ? (
                   <>
                     <Check className="h-4 w-4 text-green-500" />
-                    <span className="font-mono text-xs">{gitInfo.version.replace('git version ', '')}</span>
+                    <span className="font-mono text-xs">{gitVersion.replace('git version ', '')}</span>
                   </>
-                ) : (
-                  <span>Checking...</span>
-                )}
+                ) : null}
               </span>
             </div>
             <Input
               id="git-path"
-              placeholder={gitInfo?.path || '/usr/bin/git'}
+              placeholder={detectedPath || '/usr/bin/git'}
               value={gitPath}
               onChange={(e) => setGitPath(e.target.value)}
             />

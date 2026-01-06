@@ -51,3 +51,18 @@ pub fn get_git_version() -> Result<String, GitError> {
 pub fn get_git_path() -> Result<String, GitError> {
     find_git_executable()
 }
+
+pub fn test_git_path(path: &str) -> Result<String, GitError> {
+    let output = Command::new(path)
+        .arg("--version")
+        .output()
+        .map_err(|e| GitError::IoError {
+            message: e.to_string(),
+        })?;
+
+    if !output.status.success() {
+        return Err(GitError::GitNotFound);
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}

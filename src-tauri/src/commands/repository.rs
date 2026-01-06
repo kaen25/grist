@@ -12,6 +12,11 @@ pub fn get_git_path() -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn test_git_path(git_path: String) -> Result<String, String> {
+    path::test_git_path(&git_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn get_repository_info(path: String) -> Result<Repository, String> {
     let repo_path = Path::new(&path);
 
