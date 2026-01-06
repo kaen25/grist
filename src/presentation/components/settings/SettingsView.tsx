@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Moon, Sun, Monitor } from 'lucide-react';
+import { Moon, Sun, Monitor, Check, X } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
@@ -154,32 +154,31 @@ export function SettingsView() {
         <section className="space-y-4">
           <h3 className="text-lg font-semibold">Git</h3>
 
-          <div className="space-y-4">
-            {gitError ? (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                <p className="text-sm text-destructive">{gitError}</p>
-              </div>
-            ) : gitInfo ? (
-              <div className="p-3 bg-muted rounded-md space-y-1">
-                <p className="text-sm font-mono">{gitInfo.version}</p>
-                <p className="text-xs text-muted-foreground font-mono">{gitInfo.path}</p>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Checking git...</p>
-            )}
-
-            <div className="space-y-2">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <Label htmlFor="git-path">Git Binary Path</Label>
-              <p className="text-sm text-muted-foreground">
-                Path to the git executable. Leave empty to auto-detect.
-              </p>
-              <Input
-                id="git-path"
-                placeholder={gitInfo?.path || '/usr/bin/git'}
-                value={gitPath}
-                onChange={(e) => setGitPath(e.target.value)}
-              />
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                {gitError ? (
+                  <>
+                    <X className="h-4 w-4 text-destructive" />
+                    <span className="text-destructive">Not found</span>
+                  </>
+                ) : gitInfo ? (
+                  <>
+                    <Check className="h-4 w-4 text-green-500" />
+                    <span className="font-mono text-xs">{gitInfo.version.replace('git version ', '')}</span>
+                  </>
+                ) : (
+                  <span>Checking...</span>
+                )}
+              </span>
             </div>
+            <Input
+              id="git-path"
+              placeholder={gitInfo?.path || '/usr/bin/git'}
+              value={gitPath}
+              onChange={(e) => setGitPath(e.target.value)}
+            />
           </div>
         </section>
       </div>
