@@ -7,4 +7,5 @@ export { useHistory } from './useHistory';
 export { useIsImage } from './useIsImage';
 export { useLoading } from './useLoading';
 export { useToggle } from './useToggle';
+export { useKeyboardShortcuts } from './useKeyboardShortcuts';
 export type { LineKey } from './useDiffLineSelection';

@@ -5,9 +5,11 @@ import { RemotesView } from '@/presentation/components/remotes';
 import { StashView } from '@/presentation/components/stash';
 import { SettingsView } from '@/presentation/components/settings';
 import { useUIStore } from '@/application/stores';
+import { useKeyboardShortcuts } from '@/application/hooks';
 import { Toaster } from '@/components/ui/sonner';
 
 function App() {
+  useKeyboardShortcuts();
   const { currentView } = useUIStore();
 
   const renderView = () => {
