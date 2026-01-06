@@ -108,4 +108,12 @@ export interface IGitRepository {
   // Commit
   createCommit(repoPath: string, message: string, amend: boolean): Promise<string>;
   getLastCommitMessage(repoPath: string): Promise<string>;
+
+  // Cherry-pick & Revert
+  cherryPick(repoPath: string, hash: string): Promise<void>;
+  revertCommit(repoPath: string, hash: string): Promise<void>;
+  abortCherryPick(repoPath: string): Promise<void>;
+  abortRevert(repoPath: string): Promise<void>;
+  continueCherryPick(repoPath: string): Promise<void>;
+  continueRevert(repoPath: string): Promise<void>;
 }

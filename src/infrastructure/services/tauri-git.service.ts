@@ -254,4 +254,29 @@ export const tauriGitService: IGitRepository = {
   async getLastCommitMessage(repoPath: string): Promise<string> {
     return invoke('get_last_commit_message', { repoPath });
   },
+
+  // Cherry-pick & Revert
+  async cherryPick(repoPath: string, hash: string): Promise<void> {
+    return invoke('cherry_pick', { repoPath, hash });
+  },
+
+  async revertCommit(repoPath: string, hash: string): Promise<void> {
+    return invoke('revert_commit', { repoPath, hash });
+  },
+
+  async abortCherryPick(repoPath: string): Promise<void> {
+    return invoke('abort_cherry_pick', { repoPath });
+  },
+
+  async abortRevert(repoPath: string): Promise<void> {
+    return invoke('abort_revert', { repoPath });
+  },
+
+  async continueCherryPick(repoPath: string): Promise<void> {
+    return invoke('continue_cherry_pick', { repoPath });
+  },
+
+  async continueRevert(repoPath: string): Promise<void> {
+    return invoke('continue_revert', { repoPath });
+  },
 };

@@ -342,6 +342,42 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
     }
   };
 
+  const handleCherryPick = async () => {
+    if (!currentRepo) return;
+
+    try {
+      await tauriGitService.cherryPick(currentRepo.path, commit.hash);
+      toast.success(`Cherry-picked ${commit.short_hash}`);
+      onBranchChange?.();
+    } catch (error) {
+      const errorStr = String(error).toLowerCase();
+      if (errorStr.includes('conflict') || errorStr.includes('merge conflict')) {
+        toast.error('Cherry-pick conflict! Please resolve conflicts and continue.');
+        onBranchChange?.();
+      } else {
+        toast.error(`Cherry-pick failed: ${error}`);
+      }
+    }
+  };
+
+  const handleRevertCommit = async () => {
+    if (!currentRepo) return;
+
+    try {
+      await tauriGitService.revertCommit(currentRepo.path, commit.hash);
+      toast.success(`Reverted ${commit.short_hash}`);
+      onBranchChange?.();
+    } catch (error) {
+      const errorStr = String(error).toLowerCase();
+      if (errorStr.includes('conflict') || errorStr.includes('merge conflict')) {
+        toast.error('Revert conflict! Please resolve conflicts and continue.');
+        onBranchChange?.();
+      } else {
+        toast.error(`Revert failed: ${error}`);
+      }
+    }
+  };
+
   return (
     <>
       <ContextMenu>
@@ -663,14 +699,15 @@ export function CommitItem({ commit, isSelected, onSelect, onBranchChange }: Com
 
           <ContextMenuSeparator />
 
-          {/* Future operations - disabled for now */}
-          <ContextMenuItem disabled>
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Revert this commit...
-          </ContextMenuItem>
-          <ContextMenuItem disabled>
+          {/* Cherry-pick & Revert */}
+          <ContextMenuItem onClick={handleCherryPick}>
             <Copy className="h-4 w-4 mr-2" />
-            Cherry pick this commit...</ContextMenuItem>
+            Cherry-pick this commit
+          </ContextMenuItem>
+          <ContextMenuItem onClick={handleRevertCommit}>
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Revert this commit
+          </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
 
