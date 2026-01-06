@@ -4,6 +4,7 @@ import { HistoryView } from '@/presentation/components/history';
 import { RemotesView } from '@/presentation/components/remotes';
 import { StashView } from '@/presentation/components/stash';
 import { SettingsView } from '@/presentation/components/settings';
+import { CommandPalette } from '@/presentation/components/common';
 import { useUIStore } from '@/application/stores';
 import { useKeyboardShortcuts } from '@/application/hooks';
 import { Toaster } from '@/components/ui/sonner';
@@ -32,6 +33,7 @@ function App() {
   return (
     <>
       <AppLayout>{renderView()}</AppLayout>
+      <CommandPalette />
       <Toaster />
     </>
   );
