@@ -3,19 +3,9 @@ import { StatusView } from '@/presentation/components/status';
 import { HistoryView } from '@/presentation/components/history';
 import { RemotesView } from '@/presentation/components/remotes';
 import { StashView } from '@/presentation/components/stash';
+import { SettingsView } from '@/presentation/components/settings';
 import { useUIStore } from '@/application/stores';
 import { Toaster } from '@/components/ui/sonner';
-
-function SettingsView() {
-  return (
-    <div className="flex h-full items-center justify-center text-muted-foreground">
-      <div className="text-center">
-        <h2 className="text-lg font-medium">Settings</h2>
-        <p className="text-sm">Application settings will appear here</p>
-      </div>
-    </div>
-  );
-}
 
 function App() {
   const { currentView } = useUIStore();
