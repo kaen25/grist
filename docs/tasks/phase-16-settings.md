@@ -57,8 +57,8 @@ export interface AppSettings {
 - `src/store/settingsStore.ts`
 
 **Actions**:
-- [ ] Créer le dossier `src/components/settings/`
-- [ ] Créer `src/store/settingsStore.ts`:
+- [x] Créer le dossier `src/presentation/components/settings/`
+- [x] Créer `src/application/stores/settings.store.ts`:
 ```typescript
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -96,7 +96,7 @@ export const useSettingsStore = create<SettingsState>()(
   )
 );
 ```
-- [ ] Créer `src/components/settings/SettingsView.tsx`:
+- [x] Créer `src/presentation/components/settings/SettingsView.tsx`:
 ```typescript
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { Label } from '@/components/ui/label';
@@ -245,9 +245,9 @@ export function SettingsView() {
   );
 }
 ```
-- [ ] Installer slider: `pnpm dlx shadcn@latest add slider`
-- [ ] Créer `src/components/settings/index.ts`
-- [ ] Mettre à jour `App.tsx`:
+- [x] Installer slider: `pnpm dlx shadcn@latest add slider`
+- [x] Créer `src/presentation/components/settings/index.ts`
+- [x] Mettre à jour `App.tsx`:
 ```typescript
 import { SettingsView } from '@/components/settings';
 
@@ -266,7 +266,7 @@ case 'settings':
 - `src/App.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src/hooks/useKeyboardShortcuts.ts`:
+- [x] Créer `src/application/hooks/useKeyboardShortcuts.ts`:
 ```typescript
 import { useEffect } from 'react';
 import { useUIStore, useRepositoryStore } from '@/store';
@@ -333,9 +333,9 @@ export function useKeyboardShortcuts() {
   }, [setCurrentView, currentRepo]);
 }
 ```
-- [ ] Utiliser dans `App.tsx`:
+- [x] Utiliser dans `App.tsx`:
 ```typescript
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useKeyboardShortcuts } from '@/application/hooks';
 
 function App() {
   useKeyboardShortcuts();
@@ -354,8 +354,8 @@ function App() {
 - `src/App.tsx` (mise à jour)
 
 **Actions**:
-- [ ] Installer command: `pnpm dlx shadcn@latest add command`
-- [ ] Créer `src/components/common/CommandPalette.tsx`:
+- [x] Installer command: `pnpm dlx shadcn@latest add command` (déjà installé)
+- [x] Créer `src/presentation/components/common/CommandPalette.tsx`:
 ```typescript
 import { useState, useEffect } from 'react';
 import {
@@ -484,9 +484,9 @@ export function CommandPalette() {
   );
 }
 ```
-- [ ] Ajouter dans `App.tsx`:
+- [x] Ajouter dans `App.tsx`:
 ```typescript
-import { CommandPalette } from '@/components/common/CommandPalette';
+import { CommandPalette } from '@/presentation/components/common';
 
 // Dans le return:
 <>
@@ -508,7 +508,7 @@ import { CommandPalette } from '@/components/common/CommandPalette';
 - `index.html` (mise à jour)
 
 **Actions**:
-- [ ] Créer `src/components/ThemeProvider.tsx`:
+- [x] Créer `src/presentation/providers/ThemeProvider.tsx` (déjà existant):
 ```typescript
 import { useEffect } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -551,9 +551,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 ```
-- [ ] Wrapper l'app avec `ThemeProvider` dans `main.tsx`:
+- [x] Wrapper l'app avec `ThemeProvider` dans `main.tsx` (déjà fait):
 ```typescript
-import { ThemeProvider } from './components/ThemeProvider';
+import { ThemeProvider } from '@/presentation/providers';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
@@ -563,8 +563,8 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   </React.StrictMode>
 );
 ```
-- [ ] S'assurer que `tailwind.config.js` a `darkMode: ["class"]`
+- [x] S'assurer que Tailwind supporte dark mode via classe (Tailwind v4 - automatique)
 
 ---
 
-## Progression: 0/4
+## Progression: 4/4
