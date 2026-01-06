@@ -23,6 +23,7 @@ import { tauriGitService } from '@/infrastructure/services';
 import type { Remote, Branch } from '@/domain/entities';
 import { toast } from 'sonner';
 import { Upload } from 'lucide-react';
+import { SshUnlockDialog, isSshKeyLockedError } from './SshUnlockDialog';
 
 interface PushDialogProps {
   open: boolean;
@@ -43,6 +44,8 @@ export function PushDialog({ open, onOpenChange, onSuccess }: PushDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sshKeyPath, setSshKeyPath] = useState<string | undefined>();
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false);
+  const [lockedKeyPath, setLockedKeyPath] = useState<string>('');
 
   useEffect(() => {
     if (open && currentRepo) {
@@ -93,8 +96,7 @@ export function PushDialog({ open, onOpenChange, onSuccess }: PushDialogProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doPush = async () => {
     if (!currentRepo || !selectedRemote) return;
 
     setIsSubmitting(true);
@@ -113,10 +115,27 @@ export function PushDialog({ open, onOpenChange, onSuccess }: PushDialogProps) {
       refreshStatus(currentRepo.path);
       onSuccess?.();
     } catch (error) {
-      toast.error(`Push failed: ${error}`);
+      const keyPath = isSshKeyLockedError(error);
+      if (keyPath) {
+        setLockedKeyPath(keyPath);
+        setShowUnlockDialog(true);
+      } else {
+        toast.error(`Push failed: ${error}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doPush();
+  };
+
+  const handleUnlockSuccess = () => {
+    setShowUnlockDialog(false);
+    // Retry push after unlock
+    doPush();
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -236,6 +255,13 @@ export function PushDialog({ open, onOpenChange, onSuccess }: PushDialogProps) {
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <SshUnlockDialog
+        open={showUnlockDialog}
+        onOpenChange={setShowUnlockDialog}
+        keyPath={lockedKeyPath}
+        onUnlocked={handleUnlockSuccess}
+      />
     </Dialog>
   );
 }
