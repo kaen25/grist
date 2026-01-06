@@ -74,6 +74,10 @@ export const tauriGitService: IGitRepository = {
     return invoke('continue_rebase', { repoPath });
   },
 
+  async continueMerge(repoPath: string): Promise<void> {
+    return invoke('continue_merge', { repoPath });
+  },
+
   async getCommits(repoPath: string, limit = 100): Promise<Commit[]> {
     return invoke('get_commit_log', { repoPath, count: limit, skip: 0 });
   },
@@ -102,8 +106,8 @@ export const tauriGitService: IGitRepository = {
     return invoke('pull_remote', { repoPath, remote, branch, rebase, sshKeyPath });
   },
 
-  async push(repoPath: string, remote?: string, branch?: string, force = false, setUpstream = false, sshKeyPath?: string): Promise<void> {
-    return invoke('push_remote', { repoPath, remote, branch, force, setUpstream, sshKeyPath });
+  async push(repoPath: string, remote?: string, branch?: string, force = false, setUpstream = false, pushTags = false, sshKeyPath?: string): Promise<void> {
+    return invoke('push_remote', { repoPath, remote, branch, force, setUpstream, pushTags, sshKeyPath });
   },
 
   async testRemoteConnection(repoPath: string, remote: string, sshKeyPath?: string): Promise<void> {

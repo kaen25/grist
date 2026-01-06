@@ -174,3 +174,9 @@ pub fn continue_rebase(executor: &GitExecutor) -> Result<(), GitError> {
     executor.execute_checked(&["rebase", "--continue"])?;
     Ok(())
 }
+
+pub fn continue_merge(executor: &GitExecutor) -> Result<(), GitError> {
+    // After conflicts resolved and staged, just commit
+    executor.execute_checked(&["commit", "--no-edit"])?;
+    Ok(())
+}

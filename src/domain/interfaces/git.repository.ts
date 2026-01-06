@@ -40,13 +40,14 @@ export interface IGitRepository {
   abortMerge(repoPath: string): Promise<void>;
   abortRebase(repoPath: string): Promise<void>;
   continueRebase(repoPath: string): Promise<void>;
+  continueMerge(repoPath: string): Promise<void>;
 
   // Remotes
   addRemote(repoPath: string, name: string, url: string): Promise<void>;
   removeRemote(repoPath: string, name: string): Promise<void>;
   fetch(repoPath: string, remote?: string, prune?: boolean, sshKeyPath?: string): Promise<void>;
   pull(repoPath: string, remote?: string, branch?: string, rebase?: boolean, sshKeyPath?: string): Promise<void>;
-  push(repoPath: string, remote?: string, branch?: string, force?: boolean, setUpstream?: boolean, sshKeyPath?: string): Promise<void>;
+  push(repoPath: string, remote?: string, branch?: string, force?: boolean, setUpstream?: boolean, pushTags?: boolean, sshKeyPath?: string): Promise<void>;
   testRemoteConnection(repoPath: string, remote: string, sshKeyPath?: string): Promise<void>;
 
   // Remote Auth Config

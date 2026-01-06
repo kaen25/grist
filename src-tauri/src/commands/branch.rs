@@ -85,3 +85,9 @@ pub async fn continue_rebase(repo_path: String) -> Result<(), String> {
     let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
     branch::continue_rebase(&executor).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn continue_merge(repo_path: String) -> Result<(), String> {
+    let executor = GitExecutor::new(&repo_path).map_err(|e| e.to_string())?;
+    branch::continue_merge(&executor).map_err(|e| e.to_string())
+}
