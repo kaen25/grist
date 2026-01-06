@@ -39,6 +39,7 @@ export function PushDialog({ open, onOpenChange, onSuccess }: PushDialogProps) {
   const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [force, setForce] = useState(false);
   const [setUpstream, setSetUpstream] = useState(false);
+  const [pushTags, setPushTags] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sshKeyPath, setSshKeyPath] = useState<string | undefined>();
@@ -104,6 +105,7 @@ export function PushDialog({ open, onOpenChange, onSuccess }: PushDialogProps) {
         selectedBranch || undefined,
         force,
         setUpstream,
+        pushTags,
         sshKeyPath
       );
       toast.success('Push successful');
@@ -121,6 +123,7 @@ export function PushDialog({ open, onOpenChange, onSuccess }: PushDialogProps) {
     if (!open) {
       setForce(false);
       setSetUpstream(false);
+      setPushTags(false);
     }
     onOpenChange(open);
   };
@@ -189,6 +192,17 @@ export function PushDialog({ open, onOpenChange, onSuccess }: PushDialogProps) {
                 />
                 <Label htmlFor="set-upstream" className="font-normal cursor-pointer">
                   Set upstream (-u)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="push-tags"
+                  checked={pushTags}
+                  onCheckedChange={(checked) => setPushTags(checked === true)}
+                />
+                <Label htmlFor="push-tags" className="font-normal cursor-pointer">
+                  Push tags (--tags)
                 </Label>
               </div>
 

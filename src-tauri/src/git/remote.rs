@@ -124,6 +124,7 @@ pub fn push(
     branch: Option<&str>,
     force: bool,
     set_upstream: bool,
+    push_tags: bool,
     ssh_key_path: Option<&str>,
 ) -> Result<(), GitError> {
     let mut args = vec!["push"];
@@ -132,6 +133,9 @@ pub fn push(
     }
     if set_upstream {
         args.push("-u");
+    }
+    if push_tags {
+        args.push("--tags");
     }
     if let Some(r) = remote {
         args.push(r);

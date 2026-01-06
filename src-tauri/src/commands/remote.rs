@@ -86,6 +86,7 @@ pub async fn push_remote(
     branch: Option<String>,
     force: bool,
     set_upstream: bool,
+    push_tags: bool,
     ssh_key_path: Option<String>,
 ) -> Result<(), String> {
     let resolved_key = resolve_ssh_key(ssh_key_path.as_deref())?;
@@ -96,6 +97,7 @@ pub async fn push_remote(
         branch.as_deref(),
         force,
         set_upstream,
+        push_tags,
         resolved_key.as_deref(),
     )
     .map_err(|e| e.to_string())
