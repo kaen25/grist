@@ -12,6 +12,10 @@ export const tauriGitService: IGitRepository = {
     return invoke('get_git_version');
   },
 
+  async getGitPath(): Promise<string> {
+    return invoke('get_git_path');
+  },
+
   async getRepositoryInfo(path: string): Promise<Repository> {
     return invoke('get_repository_info', { path });
   },

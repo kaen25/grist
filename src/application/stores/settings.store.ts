@@ -5,28 +5,28 @@ export type Theme = 'light' | 'dark' | 'system';
 
 interface SettingsState {
   theme: Theme;
-  fontSize: number;
   diffContextLines: number;
   pollInterval: number;
+  gitPath: string;
 
   setTheme: (theme: Theme) => void;
-  setFontSize: (size: number) => void;
   setDiffContextLines: (lines: number) => void;
   setPollInterval: (interval: number) => void;
+  setGitPath: (path: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       theme: 'system',
-      fontSize: 13,
       diffContextLines: 3,
       pollInterval: 3000,
+      gitPath: '',
 
       setTheme: (theme) => set({ theme }),
-      setFontSize: (fontSize) => set({ fontSize }),
       setDiffContextLines: (diffContextLines) => set({ diffContextLines }),
       setPollInterval: (pollInterval) => set({ pollInterval }),
+      setGitPath: (gitPath) => set({ gitPath }),
     }),
     {
       name: 'grist-settings',

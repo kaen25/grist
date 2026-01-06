@@ -47,3 +47,7 @@ pub fn get_git_version() -> Result<String, GitError> {
 
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
+
+pub fn get_git_path() -> Result<String, GitError> {
+    find_git_executable()
+}

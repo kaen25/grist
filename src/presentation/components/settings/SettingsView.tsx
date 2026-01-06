@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -11,17 +13,36 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useSettingsStore } from '@/application/stores';
 import { useTheme } from '@/presentation/providers';
+import { tauriGitService } from '@/infrastructure/services';
 
 export function SettingsView() {
   const { theme, setTheme } = useTheme();
   const {
-    fontSize,
     diffContextLines,
     pollInterval,
-    setFontSize,
+    gitPath,
     setDiffContextLines,
     setPollInterval,
+    setGitPath,
   } = useSettingsStore();
+
+  const [gitInfo, setGitInfo] = useState<{ path: string; version: string } | null>(null);
+  const [gitError, setGitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      tauriGitService.getGitPath(),
+      tauriGitService.getVersion()
+    ]).then(([path, version]) => {
+      setGitInfo({ path, version });
+      // Set the detected path as default if user hasn't set a custom path
+      if (!gitPath) {
+        setGitPath(path);
+      }
+    }).catch((err) => {
+      setGitError(String(err));
+    });
+  }, []);
 
   return (
     <div className="h-full overflow-auto">
@@ -72,20 +93,6 @@ export function SettingsView() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Font Size</Label>
-                <span className="text-sm text-muted-foreground">{fontSize}px</span>
-              </div>
-              <Slider
-                value={[fontSize]}
-                onValueChange={([v]) => setFontSize(v)}
-                min={10}
-                max={18}
-                step={1}
-              />
             </div>
           </div>
         </section>
@@ -138,6 +145,41 @@ export function SettingsView() {
               max={10000}
               step={1000}
             />
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Git */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold">Git</h3>
+
+          <div className="space-y-4">
+            {gitError ? (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p className="text-sm text-destructive">{gitError}</p>
+              </div>
+            ) : gitInfo ? (
+              <div className="p-3 bg-muted rounded-md space-y-1">
+                <p className="text-sm font-mono">{gitInfo.version}</p>
+                <p className="text-xs text-muted-foreground font-mono">{gitInfo.path}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Checking git...</p>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="git-path">Git Binary Path</Label>
+              <p className="text-sm text-muted-foreground">
+                Path to the git executable. Leave empty to auto-detect.
+              </p>
+              <Input
+                id="git-path"
+                placeholder={gitInfo?.path || '/usr/bin/git'}
+                value={gitPath}
+                onChange={(e) => setGitPath(e.target.value)}
+              />
+            </div>
           </div>
         </section>
       </div>

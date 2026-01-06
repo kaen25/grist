@@ -4,7 +4,7 @@ mod git;
 mod keys;
 
 use commands::{
-    get_git_status, get_git_version, get_repository_info, is_git_repository, open_repository,
+    get_git_status, get_git_version, get_git_path, get_repository_info, is_git_repository, open_repository,
     stage_file, stage_all, unstage_file, unstage_all, discard_changes,
     get_file_diff, get_commit_diff, get_stash_diff, get_untracked_file_diff, stage_lines, unstage_lines,
     get_blob_base64,
@@ -32,6 +32,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             get_git_version,
+            get_git_path,
             get_repository_info,
             is_git_repository,
             open_repository,
